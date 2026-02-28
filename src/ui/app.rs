@@ -586,7 +586,7 @@ impl App {
                 Some(irc_event) = self.event_rx.recv() => {
                     self.handle_irc_event(irc_event);
                 }
-                _ = async {
+                result = async {
                     loop {
                         if event::poll(std::time::Duration::from_millis(50)).unwrap_or(false) {
                             return event::read();
@@ -594,7 +594,7 @@ impl App {
                         tokio::task::yield_now().await;
                     }
                 } => {
-                    if let Ok(Event::Key(key)) = event::read() {
+                    if let Ok(Event::Key(key)) = result {
                         if key.modifiers.contains(KeyModifiers::CONTROL)
                             && key.code == KeyCode::Char('c')
                         {
