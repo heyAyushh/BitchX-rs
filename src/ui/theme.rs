@@ -54,7 +54,7 @@ impl Theme {
     }
 
     pub fn input_bar() -> Style {
-        Style::default().fg(Color::White).bg(Color::Black)
+        Style::default().fg(Color::White)
     }
 
     pub fn nick_list_header() -> Style {
@@ -104,7 +104,7 @@ impl Theme {
     }
 
     pub fn border() -> Style {
-        Style::default().fg(Color::DarkGray).bg(Color::Black)
+        Style::default().fg(Color::DarkGray)
     }
 
     pub fn highlight() -> Style {

@@ -587,8 +587,8 @@ impl App {
     pub fn render(&self, frame: &mut Frame) {
         let area = frame.area();
 
-        let bg_block =
-            ratatui::widgets::Block::default().style(Style::default().bg(Color::Black));
+        let bg_block = ratatui::widgets::Block::default()
+            .style(Style::default().bg(Color::Reset).fg(Color::Reset));
         frame.render_widget(bg_block, area);
 
         // Main vertical layout: chat area, status bar (2 lines), input bar (3 lines)
