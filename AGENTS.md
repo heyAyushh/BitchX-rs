@@ -69,9 +69,9 @@ The Rust rewrite lives under `src/`. Modules being implemented in parallel (by d
 
 ### Testing caveats
 
-- Some `irc::client::tests` (e.g. `client_quit_command`, `client_disconnect_event_on_server_close`) may hang or fail intermittently due to TCP timing in the test mock server. Skip them with `--skip irc::client::tests::client_quit_command --skip irc::client::tests::client_disconnect` if they block your test run.
-- `cargo fmt --check` reports diffs in pre-existing files (e.g. `client.rs`). Only your own modified files need to pass format checks.
-- The binary runs with `cargo run -- --help` or `./target/debug/bitchx --help`. Use `--dumb` mode for non-interactive testing without a TUI.
+- All 248 tests pass reliably, including `irc::client` async tests with mock TCP servers.
+- `cargo fmt --check` must pass. `cargo clippy` must produce zero warnings/errors.
+- `aws-lc-sys` (transitive dep via `rustls`) requires `cmake` and a C compiler at build time. These are pre-installed in the VM.
 
 ### Key directories
 
