@@ -67,10 +67,14 @@ The Rust rewrite lives under `src/`. Modules: `irc/` (connection, protocol, comm
 - Blowfish minimum key length is 4 bytes.
 - `aes-gcm` 0.10: use `Aes256Gcm::generate_nonce(&mut OsRng)` for nonce generation.
 
+### Workspace and plugin crates
+
+The root `Cargo.toml` defines a workspace with members `"."`, `"plugins/hello"`, and `"plugins/greet"`. Plugin crates are `cdylib` and produce `.so` files in `target/debug/`. Use `cargo build --workspace` and `cargo test --workspace` to include them. Clippy/fmt on the plugin crates: `cargo clippy -p bitchx-plugin-hello -p bitchx-plugin-greet` and `cargo fmt --check -p bitchx-plugin-hello -p bitchx-plugin-greet`. Note: `cargo clippy --workspace` may report pre-existing issues in the main `bitchx` crate; use `-p` to check individual crates.
+
 ### Testing caveats
 
-- All 266 tests pass reliably (251 lib + 15 bin), including `irc::client` async tests with mock TCP servers.
-- `cargo fmt --check` must pass. `cargo clippy` must produce zero warnings/errors.
+- All 289 tests pass reliably (256 lib + 15 bin + 9 hello plugin + 9 greet plugin), including `irc::client` async tests with mock TCP servers.
+- `cargo fmt --check` must pass. `cargo clippy` must produce zero warnings/errors for new code.
 - `aws-lc-sys` (transitive dep via `rustls`) requires `cmake` and a C compiler at build time. These are pre-installed in the VM.
 
 ### Key directories
@@ -83,4 +87,6 @@ The Rust rewrite lives under `src/`. Modules: `irc/` (connection, protocol, comm
 | `script/` | IRC scripts |
 | `bitchx-docs/` | Help documentation |
 | `.cursor/rules/` | Cursor AI rules (Rust, C, clean-code, etc.) |
+| `plugins/hello/` | Example "hello" plugin crate (`cdylib`) |
+| `plugins/greet/` | Example "greet" plugin crate (`cdylib`) |
 | `.cursor/skills/` | Cursor AI skills (karpathy, rust, typescript, etc.) |
