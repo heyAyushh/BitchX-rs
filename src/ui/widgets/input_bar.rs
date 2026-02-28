@@ -46,7 +46,7 @@ impl<'a> Widget for InputBarWidget<'a> {
         let cursor_x = inner.x + self.prompt.len() as u16 + self.cursor_pos as u16;
         let cursor_y = inner.y;
         if cursor_x < inner.x + inner.width && cursor_y < inner.y + inner.height {
-            buf[(cursor_x, cursor_y)].set_style(Style::default().bg(Color::White).fg(Color::Black));
+            buf[(cursor_x, cursor_y)].set_style(Style::default().add_modifier(Modifier::REVERSED));
         }
     }
 }

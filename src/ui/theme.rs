@@ -2,6 +2,9 @@ use ratatui::style::{Color, Modifier, Style};
 
 use crate::irc::channel::MessageKind;
 
+/// Theme uses `Color::Reset` for defaults so the terminal's own color scheme
+/// is respected. Only semantic accent colors are set explicitly -- these are
+/// standard ANSI colors that terminals remap to fit their palette.
 pub struct Theme;
 
 const NICK_COLORS: [Color; 12] = [
@@ -29,14 +32,14 @@ impl Theme {
 
     pub fn message_style(kind: &MessageKind) -> Style {
         match kind {
-            MessageKind::Normal => Style::default().fg(Color::White),
+            MessageKind::Normal => Style::default(),
             MessageKind::Action => Style::default().fg(Color::Magenta),
             MessageKind::Notice => Style::default().fg(Color::Yellow),
             MessageKind::System => Style::default().fg(Color::Cyan),
             MessageKind::Error => Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             MessageKind::Join => Style::default().fg(Color::Green),
             MessageKind::Part => Style::default().fg(Color::Yellow),
-            MessageKind::Quit => Style::default().fg(Color::DarkGray),
+            MessageKind::Quit => Style::default().add_modifier(Modifier::DIM),
             MessageKind::Kick => Style::default().fg(Color::Red),
             MessageKind::Mode => Style::default().fg(Color::Cyan),
             MessageKind::Topic => Style::default()
@@ -48,13 +51,13 @@ impl Theme {
 
     pub fn status_bar() -> Style {
         Style::default()
+            .fg(Color::Reset)
             .bg(Color::Blue)
-            .fg(Color::White)
             .add_modifier(Modifier::BOLD)
     }
 
     pub fn input_bar() -> Style {
-        Style::default().fg(Color::White)
+        Style::default()
     }
 
     pub fn nick_list_header() -> Style {
@@ -74,17 +77,15 @@ impl Theme {
     }
 
     pub fn nick_normal() -> Style {
-        Style::default().fg(Color::White)
+        Style::default()
     }
 
     pub fn channel_active() -> Style {
-        Style::default()
-            .fg(Color::White)
-            .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+        Style::default().add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
     }
 
     pub fn channel_inactive() -> Style {
-        Style::default().fg(Color::DarkGray)
+        Style::default().add_modifier(Modifier::DIM)
     }
 
     pub fn channel_unread() -> Style {
@@ -94,7 +95,7 @@ impl Theme {
     }
 
     pub fn timestamp() -> Style {
-        Style::default().fg(Color::DarkGray)
+        Style::default().add_modifier(Modifier::DIM)
     }
 
     pub fn topic() -> Style {
@@ -104,10 +105,10 @@ impl Theme {
     }
 
     pub fn border() -> Style {
-        Style::default().fg(Color::DarkGray)
+        Style::default().add_modifier(Modifier::DIM)
     }
 
     pub fn highlight() -> Style {
-        Style::default().bg(Color::DarkGray).fg(Color::White)
+        Style::default().add_modifier(Modifier::REVERSED)
     }
 }
