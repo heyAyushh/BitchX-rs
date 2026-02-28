@@ -490,6 +490,10 @@ impl App {
     pub fn render(&self, frame: &mut Frame) {
         let area = frame.area();
 
+        let bg_block =
+            ratatui::widgets::Block::default().style(Style::default().bg(Color::Black));
+        frame.render_widget(bg_block, area);
+
         // Main vertical layout: chat area, status bar (2 lines), input bar (3 lines)
         let status_height = if self.channels.is_empty() { 1 } else { 2 };
         let chunks = Layout::default()
@@ -589,9 +593,9 @@ impl App {
                 Some(irc_event) = self.event_rx.recv() => {
                     self.handle_irc_event(irc_event);
                 }
-                Some(Ok(event)) = reader.next() => {
-                    if let Event::Key(key) = event {
-                        if key.kind == KeyEventKind::Press {
+                maybe_event = reader.next() => {
+                    match maybe_event {
+                        Some(Ok(Event::Key(key))) if key.kind == KeyEventKind::Press => {
                             if key.modifiers.contains(KeyModifiers::CONTROL)
                                 && key.code == KeyCode::Char('c')
                             {
@@ -601,6 +605,7 @@ impl App {
                             let action = self.input.handle_key(key);
                             self.handle_input_action(action);
                         }
+                        _ => {}
                     }
                 }
             }
