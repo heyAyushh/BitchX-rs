@@ -1,38 +1,58 @@
 use rand::Rng;
 
-/// ANSI art logo variant 0 - Diamond pattern with colored BitchX text
-/// Ported from original C source (source/art.c case 0)
-pub const LOGO_DIAMOND: &str = concat!(
+// Full-color ANSI block art ported from source/art.c (non-ASCII_LOGO section)
+// CP437 block characters (▓░▒█▀▄▌▐) converted to Unicode equivalents
+// Original art by RaD Man & Ansichrist (ACiD Productions)
+
+/// Case 0 - PhonyEye variant: full-color psychedelic block art
+/// The iconic pink/purple/cyan BitchX logo
+pub const LOGO_PHONYE: &str = concat!(
     "\x1b[40m\n",
-    "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n",
-    ":::\x1b[1;31m:.\x1b[0m.\x1b[1;31m.\x1b[14C\x1b[0m.\x1b[1;35m.:\x1b[0m:::::::::::::::::\x1b[1;31m:.\x1b[0m.\x1b[14C\x1b[1;35m.\x1b[0m.\x1b[1;35m.:\x1b[0m:::::::::::::::::\n",
-    ":::::::\x1b[1;31m:.\x1b[11C\x1b[35m:\x1b[0m:::::::::::::::::::::::\x1b[1;31m:\x1b[11C\x1b[35m.:\x1b[0m:::::::::::::::::::::\n",
-    ":::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m:::::::::::::::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m:::\x1b[1;31m:\"\x1b[0m`````````````````\"\n",
-    ":::::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m:::::::::::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m::::\x1b[1;31m: \x1b[35mB\x1b[0;35mitch\x1b[1mX \x1b[0mby \x1b[1;32mp\x1b[0;32manasync\x1b[36m!\n",
-    "\x1b[37m:::::::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m:::::::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m:::::::\x1b[1;31m:.\x1b[0m..................\n",
-    ":::::::::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m:::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m:::::::::::::::::::::::::::::\n",
-    "::\x1b[1;31m:\"\x1b[0m\"````\"\x1b[1;35m\":\x1b[0m::\x1b[1;31m:'\x1b[36m.g$\x1b[0;36m$S\x1b[32m$'\x1b[6C\x1b[1;35m`:\x1b[0m:::\x1b[1;31m:'\x1b[11C\x1b[35m\":\x1b[0m::\x1b[1;31m:\"\x1b[0m\"```\x1b[1;35m\":\x1b[0m::::::::::::::::::::\n",
-    "\x1b[1;31m'\x1b[36ms#S\x1b[0;36m$$$\"\x1b[1m$$\x1b[0;36mS#\x1b[32mn.\x1b[1;31m` \x1b[36m$$\x1b[0;36m$$\x1b[32mS\". \x1b[1;36ms#S\x1b[0;36m$$\x1b[32m$ \x1b[1;35m`\x1b[31m:'   \x1b[36m.g#\x1b[0;36mS$$\x1b[1m\"$\x1b[0;36m$S#\x1b[32mn. \x1b[1;36ms#S\x1b[0;36m$$\x1b[32m$ \x1b[1;35m`\x1b[0m\"\x1b[1;35m\":\x1b[0m::::::::::::::::\n",
-    " \x1b[1;36m$$\x1b[0;36m$$$\x1b[32m$\x1b[1;36m_,$\x1b[0;36m$\x1b[32m$S'\x1b[1;30mrE\x1b[36m.g#\x1b[0;36mS$$\x1b[32m$ \x1b[1;36m$$\x1b[0;36m$$$$ss\x1b[32mn    \x1b[1;36m$$\x1b[0;36m$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$\x1b[32m$$$ \x1b[1;36m$$\x1b[0;36m$$$$\x1b[1m\"$\x1b[0;36m$S#\x1b[32mn.\x1b[1;35m`:\x1b[0m::::::::::::\n",
-    " \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$\x1b[1;36m`\"$\x1b[0;36m$SSn\x1b[32m. \x1b[1;36m$$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36mgg#\x1b[0;36mS\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36mggg\x1b[0;36mgg\x1b[32mn \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;35m:\x1b[0m:\x1b[1;31m::\"\x1b[0m````````\n",
-    " \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$  \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$$\x1b[0;36m$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$$\x1b[0;36m$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;35m:\x1b[0m:\x1b[1;31m: \x1b[37mG\x1b[0mreets \x1b[1mT\x1b[0mo\x1b[1;30m\n",
-    " \x1b[36m$\x1b[0;36m$$$$\x1b[32m$  \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;35m:\x1b[0m:\x1b[1;31m: \x1b[36mT\x1b[0;36mrench\x1b[1;30m,\n",
-    " \x1b[36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m,$\x1b[0;36m$$$\x1b[32m$$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$\x1b[32m$$ \x1b[1;36m$\x1b[0;36m$$$$\x1b[32m$ \x1b[1;36m$\x1b[0;36m$$$\x1b[32m$$ \x1b[1;36m$\x1b[0;36m$$$\x1b[32m$$ \x1b[1;36m$\x1b[0;36m$$$\x1b[32m$$ \x1b[1;35m:\x1b[0m:\x1b[1;31m: \x1b[36mL\x1b[0;36mifendel\x1b[1;30m,\n",
-    " \x1b[36m$\x1b[0;36m$$$$$ss$$$\x1b[32m$S' \x1b[1;36m$\x1b[0;36m$$$\x1b[32m$$$ \x1b[1;36m`S\x1b[0;36m$$$$s$$\x1b[32m$S' \x1b[1;36m`S\x1b[0;36m$$$$s$$$\x1b[32m$S' \x1b[1;36m$\x1b[0;36m$$\x1b[32m$$$ \x1b[1;36m$\x1b[0;36m$$\x1b[32m$$$ \x1b[1;35m:\x1b[0m:\x1b[1;31m: \x1b[36mJ\x1b[0;36mondala\x1b[1mR\x1b[30m,\n",
-    "\x1b[31m.\x1b[0m............\x1b[1;35m.:\x1b[31m:\x1b[11C\x1b[35m.\x1b[0m......\x1b[1;35m.:\x1b[31m:.\x1b[11C\x1b[35m:\x1b[31m:.\x1b[0m.....\x1b[1;31m:\x1b[0m.......\x1b[1;35m:\x1b[0m:\x1b[1;31m: \x1b[36mZ\x1b[0;36mircon\x1b[1;30m,\n",
-    "\x1b[0m:::::::::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m:::::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m::::::\x1b[1;31m:\"\x1b[0m``````\x1b[1;31m`' \x1b[36mO\x1b[0;36mtiluke\x1b[1;30m,\n",
-    "\x1b[0m:::::::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m:::::::::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m:::\x1b[1;31m: \x1b[36mH\x1b[0;36mappy\x1b[1mC\x1b[0;36mrappy\x1b[1;30m, \x1b[36mY\x1b[0;36mak\x1b[1;30m,\n",
-    "\x1b[0m:::::::::\x1b[1;31m:'\x1b[10C\x1b[35m.:\x1b[0m:::::::::::::::::::\x1b[1;31m:.\x1b[10C\x1b[35m`:\x1b[0m:\x1b[1;31m: \x1b[36mM\x1b[0;36masonry\x1b[1;30m, \x1b[36mB\x1b[0;36muddha\x1b[1mX\x1b[30m..\n",
-    "\x1b[0m:::::::\x1b[1;31m:'\x1b[11C\x1b[35m:\x1b[0m:::::::::::::::::::::::\x1b[1;31m:\x1b[11C\x1b[35m`:\x1b[31m:.\x1b[0m...................\n",
-    ":::\x1b[1;31m:\"\x1b[0m\"\x1b[1;31m'\x1b[14C\x1b[0m`\x1b[1;35m\":\x1b[0m:::::::::::::::::\x1b[1;31m:\"\x1b[0m'\x1b[14C\x1b[1;35m`\x1b[0m\"\x1b[1;35m\":\x1b[0m:::::::::::::::::\n",
-    "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\x1b[0m\n",
+    "\x1b[0m\x1b[12C\x1b[35m   \x1b[37m\n",
+    "\x1b[4C\x1b[35m     ▄▄▄\x1b[37m\x1b[33C\x1b[35m   \x1b[37m\x1b[28C\x1b[34m  \x1b[37m\n",
+    "\x1b[35m      ▄█\x1b[1m▀\x1b[0;35m▀▄▄▄▄▄\x1b[37m\x1b[10C\x1b[35m░\x1b[30;45m▓\x1b[37;40m\x1b[5C\x1b[36m                \x1b[37m\x1b[4C\x1b[35m  \x1b[37m  \x1b[1;35;45m▐\x1b[40m▄\x1b[0m\x1b[3C\x1b[35m▄\x1b[1m▄\x1b[0;35m \x1b[37m\n",
+    "\x1b[4C\x1b[35m    ▄\x1b[1m▄\x1b[45m█\x1b[40m▀▀\x1b[0;35m▀   ▄▄▄\x1b[1m▄▄\x1b[0;35m█▀▀▀ \x1b[37m \x1b[35m  \x1b[37m\x1b[4C\x1b[36m              \x1b[37m\x1b[7C\x1b[35m▀\x1b[37m\x1b[6C\x1b[35m ▀\x1b[1m▀▀\x1b[45m▀█▄\x1b[40m▄▄\x1b[0;35m▄\x1b[37m \x1b[35m▄\x1b[1;45m▄\x1b[0;35m▄\x1b[37m\n",
+    "\x1b[6C\x1b[35m ▀▀ ▄\x1b[1m▄▄\x1b[45m▄\x1b[47m▀▀▓\x1b[45m█▀\x1b[31m \x1b[0;35m▀\x1b[37m\x1b[7C\x1b[35m \x1b[37m\x1b[4C\x1b[35m    \x1b[37m\x1b[5C\x1b[35m     \x1b[37m\x1b[21C\x1b[35m▀\x1b[1;45m▀\x1b[47m▓▓\x1b[45m▄██▀\x1b[0;35m▀\x1b[37m\n",
+    " \x1b[34m█\x1b[1;44m░░\x1b[0;34m██\x1b[37m \x1b[35m▄\x1b[1;45m▄█\x1b[47m█▓▌▀ ▐\x1b[45m█▌\x1b[31m \x1b[0;35m▌\x1b[34m   \x1b[37m\x1b[5C\x1b[34m▄\x1b[1m▄▄\x1b[0;34m▄\x1b[37m \x1b[35m    \x1b[37m \x1b[34m▐\x1b[1;44m  \x1b[0;34m██\x1b[37m \x1b[35m \x1b[37m\x1b[12C\x1b[34m▐████\x1b[1;44m  \x1b[0;34m \x1b[35m▐\x1b[1m▄▄\x1b[0;35m▄▐\x1b[1;45m▐██▀\x1b[0;35m▀  \x1b[37m\n",
+    " \x1b[34m█\x1b[1;44m▓▓\x1b[40m▄▄▄▄▄▄▄▄▄▄\x1b[0;34m▄\x1b[37m \x1b[1;35m▀▀\x1b[0;35m▀█▄\x1b[37m \x1b[34m  \x1b[37m \x1b[34m▄\x1b[1;44m▄██\x1b[47m▓▀\x1b[44m██▄\x1b[0;34m▄\x1b[37m \x1b[35m \x1b[37m \x1b[34m█\x1b[1;44m░░░\x1b[0;34m█\x1b[37m \x1b[35m   \x1b[37m\x1b[3C\x1b[34m▄▄▄\x1b[37m\x1b[5C\x1b[34m██\x1b[1;44m░░░ \x1b[0;34m \x1b[35m▐\x1b[1;45m▐\x1b[47m▀\x1b[45m█\x1b[47m███\x1b[45m▄\x1b[40m▄\x1b[0;35m▄\x1b[37m\n",
+    " \x1b[34m█\x1b[1;44m██\x1b[47m▀\x1b[44m▌\x1b[0;34m▌\x1b[37m\x1b[5C\x1b[34m▀\x1b[1m▀\x1b[44m▀██▄\x1b[40m▄▄\x1b[0;34m▄\x1b[37m \x1b[35m▀\x1b[37m \x1b[34m▐\x1b[1;44m▐█▓█\x1b[47m█▄▄▐\x1b[44m█▌\x1b[0;34m▌\x1b[37m \x1b[34m▐\x1b[1;44m▐▓▓▌\x1b[0;34m▌\x1b[1m▄▄▄\x1b[44m▄█\x1b[46m▓\x1b[44m█▓░\x1b[0m\x1b[5C\x1b[1;34m \x1b[0;34m▐\x1b[1;44m░▓▓\x1b[40m▓\x1b[44m▌\x1b[0;34m▌\x1b[37m \x1b[35m█\x1b[1;47m▌▀▓▓\x1b[40m███\x1b[45m▀\x1b[40m▀\x1b[0;35m▀\x1b[37m\n",
+    " \x1b[34m▐\x1b[1;44m▐\x1b[47m▀▐\x1b[44m▌\x1b[0;34m▌\x1b[35m▀▌\x1b[37m\x1b[7C\x1b[34m▀\x1b[1;44m▀████▄\x1b[0;34m▄ ▀\x1b[1;44m▀▀▀▐█\x1b[47m██\x1b[44m▀\x1b[0;34m▀  █\x1b[1;44m███▌ \x1b[40m▀\x1b[0;34m  \x1b[37m \x1b[34m█\x1b[1;44m██▌\x1b[0;34m▌\x1b[37m \x1b[34m▄\x1b[1m▄▄▄\x1b[0;30;44m██\x1b[1;34m \x1b[40m█\x1b[44m█▓▌\x1b[0;34m▌ \x1b[35m█\x1b[1;47m▌ ▄\x1b[45m▀\x1b[40m▀\x1b[0;35m▀\x1b[34m ▄▄█\x1b[37m\n",
+    "\x1b[35m▄\x1b[34m▐\x1b[1;44m▐\x1b[47m▄░\x1b[40m█\x1b[0;34m█\x1b[35m \x1b[1m▌\x1b[0;35m▄░\x1b[30;45m▓\x1b[37;40m\x1b[5C\x1b[34m▐\x1b[1;44m▐\x1b[47m▓▓\x1b[44m█▓░\x1b[0;34m▌   ▀▀▀▀ ▄▄ ▐\x1b[1;44m▐█\x1b[47m█\x1b[40m█\x1b[44m \x1b[0;34m▌   ▐\x1b[1;44m▐██▄\x1b[47m▓▓\x1b[44m█▀\x1b[40m▀▀\x1b[0m  \x1b[34m▐\x1b[1;44m▐███\x1b[0;34m█\x1b[37m \x1b[35m▐\x1b[1m▀\x1b[0;35m▀\x1b[37m \x1b[34m▄\x1b[1m▄\x1b[44m▄██▄\x1b[40m▄\x1b[0;34m▄\x1b[37m\n",
+    "\x1b[35m▌\x1b[34m▐\x1b[1;44m▐\x1b[47m█▓█\x1b[44m \x1b[0m \x1b[1;35m▀\x1b[0;35m▀\x1b[37m\x1b[3C\x1b[34m   ▄█\x1b[1;44m▀\x1b[40m▀\x1b[0;34m▀▀  \x1b[37m \x1b[34m▄\x1b[1m▄▄▄\x1b[44m▄███▌\x1b[0;34m▌\x1b[37m \x1b[1;34;44m ████\x1b[0;34m█\x1b[37m  \x1b[34m ▄\x1b[1;44m▄█\x1b[47m█▄\x1b[44m█▀\x1b[0;34m▀ \x1b[37m  \x1b[35m   \x1b[34m █\x1b[1;44m███░\x1b[0m \x1b[34m▄▄\x1b[1;44m▐▀\x1b[40m▀▀\x1b[44m▀███▓░\x1b[0m\n",
+    "\x1b[35m▌ \x1b[34m█\x1b[1;47m██\x1b[44m█\x1b[0;34m█\x1b[37m\x1b[6C\x1b[34m▀▀\x1b[37m\x1b[10C\x1b[34m▀\x1b[1m▀\x1b[0;34m▐\x1b[1;44m▐\x1b[47m▌ ▄█\x1b[0;34m█\x1b[37m \x1b[34m▐\x1b[1;44m▐█\x1b[47m▓█\x1b[44m▌\x1b[0;34m▌\x1b[37m \x1b[34m ▐\x1b[1;44m▐\x1b[47m█▌▀\x1b[44m█▌\x1b[0;34m▌\x1b[37m \x1b[35m \x1b[1;30m Pe^\x1b[0;35m  \x1b[34m▐\x1b[1;44m▐\x1b[47m▓▓\x1b[44m██▀\x1b[0;34m▀ \x1b[37m  \x1b[34m █\x1b[1;44m█\x1b[47m▓\x1b[44m█▌\x1b[0;34m▌\x1b[37m\n",
+    "\x1b[30;45m░\x1b[37;40m \x1b[34m█\x1b[1;44m██▀▀\x1b[40m▀▀▀\x1b[44m▀██▄\x1b[40m▄▄▄▄\x1b[0;34m▄\x1b[37m\x1b[8C\x1b[34m▐\x1b[1;44m▐\x1b[47m▌░\x1b[44m█▌\x1b[0;34m▌\x1b[37m \x1b[34m█\x1b[1;44m█\x1b[47m▌░█\x1b[44m▌\x1b[0;34m▌\x1b[37m \x1b[35m \x1b[34m ▀\x1b[1;44m▀█\x1b[47m▄▄█\x1b[44m▄\x1b[0;34m▄\x1b[37m \x1b[35m      \x1b[37m \x1b[34m█\x1b[1;44m███ \x1b[0m \x1b[34m  \x1b[37m  \x1b[34m▐\x1b[1;44m▐\x1b[47m▀░\x1b[44m█ \x1b[0m\x1b[35m▄\x1b[37m\n",
+    "\x1b[35m░\x1b[37m \x1b[34m█\x1b[1;44m███▌\x1b[0;34m▌\x1b[37m  \x1b[35m▄▄▄\x1b[37m \x1b[34m▀\x1b[1m▀▀\x1b[44m▀█\x1b[47m█▀█\x1b[44m▄\x1b[40m▄▄\x1b[0m  \x1b[34m█\x1b[1;44m█\x1b[47m▄▓\x1b[44m█▌\x1b[0;34m▌▐\x1b[1;44m▐█\x1b[47m ▐\x1b[44m█\x1b[0;34m█\x1b[37m \x1b[35m▄▐ \x1b[37m \x1b[34m  ▀\x1b[1m▀\x1b[44m▀█\x1b[40m██\x1b[44m▄\x1b[40m▄\x1b[0;34m▄\x1b[37m \x1b[35m \x1b[37m  \x1b[34m▐\x1b[1;44m▐██▌\x1b[0;34m▌\x1b[37m \x1b[35m░\x1b[30;45m▓\x1b[37;40m \x1b[34m▐\x1b[1;44m▐\x1b[47m ▐\x1b[44m▌\x1b[0;34m▌\x1b[35m▌\x1b[37m\n",
+    "  \x1b[34m▐\x1b[1;44m▐\x1b[46m▀▓\x1b[44m▌\x1b[0;34m▌\x1b[37m\x1b[4C\x1b[35m▀\x1b[1;45m░▄▄\x1b[0;35m▄▄\x1b[37m \x1b[34m▀\x1b[1;44m▀█\x1b[47m▄ ▀▀█\x1b[44m██████▄▄\x1b[47m▓▀\x1b[44m███\x1b[0;34m█ \x1b[35m█▄\x1b[37m\x1b[3C\x1b[34m▐\x1b[1;44m▐████▀▀███▄\x1b[40m▄\x1b[0;34m▄ \x1b[1;44m ██▌\x1b[0;34m▌\x1b[37m\x1b[4C\x1b[34m█\x1b[1;44m███\x1b[0;34m█\x1b[35m▄▌\x1b[37m\n",
+    "  \x1b[34m▐\x1b[1;44m▐▓██▄\x1b[0;34m▄ \x1b[37m  \x1b[35m ▐\x1b[1;45m▐\x1b[47m▓\x1b[45m▀▌\x1b[0;35m▌\x1b[37m \x1b[34m▐\x1b[1;44m▐\x1b[47m█▌ ░▓▓\x1b[44m██\x1b[40m███\x1b[44m█████\x1b[0;34m▀▀▀     ▄\x1b[1;44m▄███▀\x1b[0;34m▀\x1b[37m \x1b[35m▄\x1b[37m \x1b[34m▀\x1b[1m▀\x1b[44m▀███▄▐██\x1b[0;34m█\x1b[37m \x1b[34m \x1b[37m  \x1b[34m█▀▀\x1b[1;44m \x1b[0;34m▌\x1b[35m░\x1b[30;45m▓\x1b[37;40m\n",
+    "  \x1b[30;44m░\x1b[34;40m▓\x1b[1;44m░\x1b[0;34m▌▀\x1b[1m▀\x1b[0;34m▀ \x1b[37m \x1b[35m \x1b[37m \x1b[35m▀\x1b[1m▀▀\x1b[0m\x1b[3C\x1b[34m▄\x1b[1;44m▄█▀█\x1b[47m▓▓\x1b[44m█▀\x1b[40m▀▀\x1b[0;34m▀   \x1b[37m \x1b[34m▀▀\x1b[1m▀\x1b[44m▀█▄\x1b[40m▄▄▄\x1b[44m▄█▀\x1b[40m▀▀\x1b[0;34m▀ \x1b[35m▄\x1b[1m▄\x1b[45m▄\x1b[47m▀\x1b[45m█▄\x1b[0;35m▄\x1b[37m  \x1b[34m▀\x1b[1;44m▀██\x1b[46m▀\x1b[44m█\x1b[0;34m█  \x1b[37m \x1b[34m █▄    \x1b[37m\n",
+    "  \x1b[34m░\x1b[30;44m▓\x1b[34;40m      \x1b[37m \x1b[34m \x1b[37m \x1b[34m▄\x1b[1m▄▄▄\x1b[44m▄\x1b[40m███\x1b[44m▌\x1b[0;34m▌\x1b[1;44m▐▀\x1b[0;34m▀\x1b[37m \x1b[34m        \x1b[37m\x1b[5C\x1b[34m▀\x1b[1;44m▀██▄\x1b[0;34m▄  \x1b[35m▀█\x1b[1;45m▀\x1b[47m█▄ ░▓\x1b[45m▓░\x1b[0;35m▌ \x1b[37m \x1b[34m▐\x1b[1;44m▐\x1b[46m▓▓\x1b[44m▓░\x1b[0;34m▌\x1b[37m  \x1b[34m  \x1b[37m\n",
+    "  \x1b[34m \x1b[37m\x1b[14C\x1b[35m     \x1b[37m \x1b[1;34;44m▐\x1b[0;34m▌\x1b[37m\x1b[4C\x1b[1;30mP\x1b[41mh\x1b[40monyEye\x1b[0;34m   \x1b[37m \x1b[34m▐\x1b[1;44m▐█▓░\x1b[0;34m▌  \x1b[35m▐\x1b[1;45m ▐▀█\x1b[47m▓\x1b[45m█▀\x1b[0;35m▀\x1b[34m   \x1b[35m         \x1b[34m \x1b[37m\n",
+    "\x1b[4C\x1b[34m[\x1b[37m  BitchX 2.0   \x1b[34m]\x1b[35m \x1b[37m \x1b[1;34m▐\x1b[0;34m▀\x1b[37m\x1b[4C\x1b[1;30m^\x1b[0m\x1b[10C\x1b[34m▄\x1b[1;44m▄█▀\x1b[40m▀\x1b[0;34m▀\x1b[37m  \x1b[35m▄█\x1b[1;45m ▀\x1b[0;35m▌▀▀░\x1b[30;45m▓\x1b[37;40m\x1b[8C\x1b[1;30mAwe/Cia\x1b[0m\n",
+    "\x1b[10C\x1b[35m          \x1b[34m   \x1b[1m▀\x1b[0;34m    \x1b[37m\x1b[9C\x1b[34m██ ▀\x1b[37m\x1b[5C\x1b[35m   \x1b[34m   \x1b[35m▌\x1b[37m\x1b[7C\x1b[0m\n",
+    "\x1b[1;30m          \x1b[0;35m          \x1b[37m\x1b[32C\x1b[35m▀\x1b[37m\x1b[14C\x1b[35m   \x1b[37m\n",
+    "\x1b[10C\x1b[35m             \x1b[37m\n",
     "\x1b[0m\n",
 );
 
-/// ASCII art logo variant - acidjazz style (case 2)
-/// No ANSI color codes, most portable variant
-pub const LOGO_ACIDJAZZ: &str = concat!(
+/// Case 1 - Blue block art with gradient shading (BitchX text in blocks)
+pub const LOGO_BLUE: &str = concat!(
     "\x1b[40m\n",
+    "\x1b[0;1;44m                                                         \x1b[0;34m███▀█████████▀\x1b[35m▄\x1b[1;45m▒▓\x1b[40m▄\x1b[0;34m▀██\n",
+    "\x1b[44m \x1b[1;46m▒\x1b[5C\x1b[44m            \x1b[46m▒\x1b[5C\x1b[0;34m█████\x1b[44m \x1b[40m████████████\x1b[1;46m░\x1b[5C\x1b[44m       \x1b[0;34m█▀▀\x1b[35m▄\x1b[1m▌\x1b[0;34m▐██████▀\x1b[35m▄\x1b[1;45m░▒▓█\x1b[40m▀\x1b[0;34m▄██\n",
+    "\x1b[44m \x1b[1;46m▓\x1b[5C\x1b[40m▄    \x1b[0;34m▀\x1b[1;46m▒\x1b[5C▓\x1b[5C\x1b[0;34m▄▄▄███\x1b[1;44m▄\x1b[40m▀    ▄    \x1b[0;34m▀\x1b[1;46m▒\x1b[5C\x1b[40m▄   \x1b[0;35m▄▄▄▄\x1b[1;45m░▒▓\x1b[40m▌\x1b[0;34m▐████▀\x1b[35m▄\x1b[1;45m░▒\x1b[0;35m▀▀\x1b[1m▀\x1b[0;34m▄████\n",
+    "\x1b[44m \x1b[1m█\x1b[5C█\x1b[5C▄\x1b[0;34m▀▀▀▀▀\x1b[1;44m█\x1b[5C█\x1b[5C█\x1b[5C▓\x1b[5C\x1b[46m▓\x1b[5C\x1b[44m█\x1b[5C\x1b[0;35m▀▀▀▀\x1b[1;45m▒▓\x1b[40m▄\x1b[0;34m▀█▀\x1b[35m▄▀▀\x1b[34m▄▄████████\n",
+    "\x1b[44m \x1b[1m▓\x1b[5C▓\x1b[5C█\x1b[5C▓\x1b[5C▓\x1b[5C▓\x1b[5C▄\x1b[0;34m▀▀▀▀▀\x1b[1;44m█\x1b[5C▓\x1b[5C\x1b[0;34m████▄▄▄\x1b[35m▀\x1b[1m■\x1b[0;34m▄■████████████\n",
+    "\x1b[44m \x1b[1m▒\x1b[5C▒\x1b[5C▓\x1b[5C▒\x1b[5C▒\x1b[5C▒\x1b[5C▒\x1b[5C▓\x1b[5C▒\x1b[5C \x1b[0;34m████▀\x1b[35m▄ \x1b[34m█▄\x1b[1;35m▀▄▄\x1b[0;34m▀▀▀███████\n",
+    "\x1b[44m \x1b[1m░\x1b[5C░\x1b[5C▒\x1b[5C░\x1b[5C░\x1b[5C░\x1b[5C░\x1b[5C▒\x1b[5C░\x1b[5C \x1b[0;34m██▀\x1b[35m▄\x1b[1;45m░\x1b[0;35m▌\x1b[34m▐██▌\x1b[1;35m▐\x1b[45m█▓▒░\x1b[0;35m▄▄▄\x1b[34m▀███\n",
+    "\x1b[44m  \x1b[5C\x1b[30m▄\x1b[5C\x1b[1;34m░\x1b[5C \x1b[0;34m▄    ▀    ▄\x1b[44m \x1b[40m▄    ▀    ▄\x1b[1;44m░\x1b[5C\x1b[0;34m█\x1b[5C█▀\x1b[1;35m▄\x1b[45m▒░ \x1b[1C\x1b[0;34m████ \x1b[1;35;45m▓▒▒ ░ \x1b[0;35m██▄▄▄\n",
+    "\x1b[44m                                                    \x1b[34;40m██▀\x1b[1;35m▄\x1b[45m▓▒░ \x1b[0;35m▌\x1b[34m▐█████ \x1b[1;35;45m▒░░\x1b[0;35m███▀▀\x1b[34m▄▄\n",
+    "\x1b[44m█████████████████████████████████████████████████████▌\x1b[1;35m▐\x1b[45m▓▒░  \x1b[1C\x1b[0;34m███████ \x1b[1;35;45m░\x1b[0;35m▀▀\x1b[34m▄▄████\n",
+    "\x1b[44m██████████████████████████████████████████████████████▄\x1b[1;35m▀\x1b[0;35m▀▀▀\x1b[34m▄█████████▄████████\n",
+    "\x1b[0m\n",
+);
+
+/// ASCII-only fallback (acidjazz variant)
+pub const LOGO_ASCII: &str = concat!(
     "                                                                   ,\n",
     "                                           .                     ,$\n",
     "                 .                                              ,$'\n",
@@ -52,39 +72,21 @@ pub const LOGO_ACIDJAZZ: &str = concat!(
     "                                                                `$,\n",
     "                                                                 `$\n",
     "                                                                   `\n",
-    "\x1b[0m\n",
 );
 
-/// ANSI art logo variant 14 - Minimal underline style
-/// Ported from original C source (source/art.c case 14)
-pub const LOGO_MINIMAL: &str = concat!(
-    "\x1b[40m\n",
-    "\x1b[8C\x1b[1;35m________\x1b[0m\x1b[9C\x1b[1;30m   \x1b[35m________ \x1b[0m\x1b[8C\x1b[1;35m________\x1b[30m \x1b[0m   \x1b[1;30m \x1b[0m\x1b[4C\x1b[1;35m________\n",
-    "\x1b[0m\x1b[8C\x1b[1;35m\\\x1b[0m\x1b[6C\x1b[1;35m//___________\\\x1b[0m\x1b[6C\x1b[1;35m/________\\\\\x1b[0m\x1b[6C\x1b[1;35m/_________\\_\x1b[0m\x1b[5C\x1b[1;35m//\n",
-    "\x1b[0m\x1b[6C\x1b[1;35m___\x1b[0;35m\\\x1b[37m \x1b[1;30m \x1b[0m \x1b[1;30m \x1b[0;35m___\x1b[37m   \x1b[35m_________\x1b[1;30m \x1b[0m\x1b[4C\x1b[35m__\x1b[37m\x1b[5C\x1b[35m_______\x1b[37m\x1b[8C\x1b[1;30m \x1b[0;35m\\\x1b[37m\x1b[5C\x1b[35m/\x1b[37m\x1b[4C\x1b[35m/\n",
-    "\x1b[37m\x1b[8C\x1b[35m<<_____\x1b[1;30m \x1b[0m\x1b[4C\x1b[35m\\\\\x1b[1;30m \x1b[0m\x1b[4C\x1b[1;30m \x1b[0;35m/\x1b[37m\x1b[6C\x1b[35m> \x1b[37m\x1b[4C\x1b[35m\\\x1b[37m   \x1b[1;30m \x1b[0m \x1b[35m/____\\\x1b[1;30m  \x1b[0m   \x1b[35m>>\x1b[37m\x1b[8C\x1b[35m\\\x1b[1;35m ___\n",
-    "\x1b[0m\x1b[6C\x1b[1;30m____\x1b[0m\x1b[4C\x1b[1;30m/______\\_____<<_____//___________>>  /_______\\\x1b[0m   \x1b[1;30m/_____>>sm\n",
-    "\x1b[0m\x1b[8C\x1b[1;30m<<___________\x1b[0m\x1b[7C\x1b[1;30m  \x1b[0m bitchx by panasync\x1b[7C\x1b[1;30m /______\\\\\x1b[0m   \x1b[1;30m____\n",
-    "\x1b[0m\x1b[20C\x1b[1;30m/------------------------------------------------\\\\\n",
-    "\n",
-    "\n",
-    "\x1b[0m\n",
-);
+const LOGOS: &[&str] = &[LOGO_PHONYE, LOGO_BLUE, LOGO_ASCII];
 
-const LOGOS: &[&str] = &[LOGO_DIAMOND, LOGO_ACIDJAZZ, LOGO_MINIMAL];
-
-/// Print a randomly selected ANSI art logo
 pub fn print_ansi_logo() {
     let mut rng = rand::thread_rng();
     let idx = rng.gen_range(0..LOGOS.len());
     print!("{}", LOGOS[idx]);
 }
 
-/// Print startup banner with a random logo and the version tagline
 pub fn print_startup_banner() {
     print_ansi_logo();
-    println!("  BitchX 2.0 - Rust Rewrite");
-    println!("  Type /help for commands");
+    println!();
+    println!("  \x1b[1;36mBitchX 2.0\x1b[0m - \x1b[35mRust Rewrite\x1b[0m");
+    println!("  Type \x1b[1m/help\x1b[0m for commands");
     println!();
 }
 
@@ -98,29 +100,23 @@ mod tests {
     }
 
     #[test]
-    fn acidjazz_contains_bitchx() {
-        let lower = LOGO_ACIDJAZZ.to_lowercase();
-        assert!(
-            lower.contains("bitchx") || lower.contains("b i t c h"),
-            "acidjazz logo should contain bitchx or 'b i t c h'"
-        );
+    fn phonye_contains_ansi_and_blocks() {
+        assert!(LOGO_PHONYE.contains("\x1b["));
+        assert!(LOGO_PHONYE.contains('▄') || LOGO_PHONYE.contains('█'));
+        assert!(LOGO_PHONYE.contains("PhonyEye") || LOGO_PHONYE.contains("BitchX"));
     }
 
     #[test]
-    fn diamond_contains_ansi_escapes() {
-        assert!(
-            LOGO_DIAMOND.contains("\x1b["),
-            "diamond logo should contain ANSI escape sequences"
-        );
+    fn blue_contains_block_gradient() {
+        assert!(LOGO_BLUE.contains('░'));
+        assert!(LOGO_BLUE.contains('▒'));
+        assert!(LOGO_BLUE.contains('▓'));
+        assert!(LOGO_BLUE.contains('█'));
     }
 
     #[test]
-    fn minimal_contains_bitchx() {
-        let lower = LOGO_MINIMAL.to_lowercase();
-        assert!(
-            lower.contains("bitchx"),
-            "minimal logo should contain bitchx"
-        );
+    fn ascii_contains_bitchx() {
+        assert!(LOGO_ASCII.to_lowercase().contains("b i t c h"));
     }
 
     #[test]
