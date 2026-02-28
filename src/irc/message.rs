@@ -19,7 +19,7 @@ pub struct IrcMessage {
 
 impl IrcMessage {
     pub fn parse(line: &str) -> Result<Self, crate::error::BitchXError> {
-        let line = line.trim_end_matches(|c| c == '\r' || c == '\n');
+        let line = line.trim_end_matches(['\r', '\n']);
         if line.is_empty() {
             return Err(crate::error::BitchXError::Parse("empty input".into()));
         }
@@ -27,9 +27,9 @@ impl IrcMessage {
         let mut rest = line;
 
         let prefix_str = if rest.starts_with(':') {
-            let end = rest.find(' ').ok_or_else(|| {
-                crate::error::BitchXError::Parse("prefix with no command".into())
-            })?;
+            let end = rest
+                .find(' ')
+                .ok_or_else(|| crate::error::BitchXError::Parse("prefix with no command".into()))?;
             let p = &rest[1..end];
             rest = &rest[end + 1..];
             Some(p)
@@ -39,9 +39,7 @@ impl IrcMessage {
 
         rest = rest.trim_start();
         if rest.is_empty() {
-            return Err(crate::error::BitchXError::Parse(
-                "no command found".into(),
-            ));
+            return Err(crate::error::BitchXError::Parse("no command found".into()));
         }
 
         let mut params = Vec::new();
@@ -52,8 +50,8 @@ impl IrcMessage {
             rest = &rest[space_pos + 1..];
 
             while !rest.is_empty() {
-                if rest.starts_with(':') {
-                    params.push(rest[1..].to_string());
+                if let Some(trailing) = rest.strip_prefix(':') {
+                    params.push(trailing.to_string());
                     break;
                 }
                 if let Some(pos) = rest.find(' ') {
@@ -189,8 +187,7 @@ mod tests {
 
     #[test]
     fn parse_privmsg_with_prefix() {
-        let msg =
-            IrcMessage::parse(":nick!user@host PRIVMSG #channel :Hello world").unwrap();
+        let msg = IrcMessage::parse(":nick!user@host PRIVMSG #channel :Hello world").unwrap();
         assert_eq!(
             msg.prefix,
             Some(Prefix::User {
@@ -205,8 +202,7 @@ mod tests {
 
     #[test]
     fn parse_numeric_reply_001() {
-        let msg =
-            IrcMessage::parse(":server 001 nick :Welcome to the IRC Network").unwrap();
+        let msg = IrcMessage::parse(":server 001 nick :Welcome to the IRC Network").unwrap();
         assert_eq!(msg.prefix, Some(Prefix::Server("server".into())));
         assert_eq!(msg.command, "001");
         assert_eq!(msg.params, vec!["nick", "Welcome to the IRC Network"]);
@@ -214,9 +210,8 @@ mod tests {
 
     #[test]
     fn parse_numeric_reply_353() {
-        let msg =
-            IrcMessage::parse(":server.name 353 mynick = #channel :nick1 nick2 @op +voice")
-                .unwrap();
+        let msg = IrcMessage::parse(":server.name 353 mynick = #channel :nick1 nick2 @op +voice")
+            .unwrap();
         assert_eq!(msg.prefix, Some(Prefix::Server("server.name".into())));
         assert_eq!(msg.command, "353");
         assert_eq!(
@@ -242,16 +237,14 @@ mod tests {
 
     #[test]
     fn parse_mode_with_multiple_params() {
-        let msg =
-            IrcMessage::parse(":server MODE #channel +ov nick1 nick2").unwrap();
+        let msg = IrcMessage::parse(":server MODE #channel +ov nick1 nick2").unwrap();
         assert_eq!(msg.command, "MODE");
         assert_eq!(msg.params, vec!["#channel", "+ov", "nick1", "nick2"]);
     }
 
     #[test]
     fn parse_message_no_prefix() {
-        let msg = IrcMessage::parse("NOTICE AUTH :*** Looking up your hostname")
-            .unwrap();
+        let msg = IrcMessage::parse("NOTICE AUTH :*** Looking up your hostname").unwrap();
         assert_eq!(msg.prefix, None);
         assert_eq!(msg.command, "NOTICE");
         assert_eq!(msg.params, vec!["AUTH", "*** Looking up your hostname"]);
@@ -259,12 +252,8 @@ mod tests {
 
     #[test]
     fn parse_trailing_with_spaces() {
-        let msg = IrcMessage::parse(":nick PRIVMSG #chan :this is a message with spaces")
-            .unwrap();
-        assert_eq!(
-            msg.params,
-            vec!["#chan", "this is a message with spaces"]
-        );
+        let msg = IrcMessage::parse(":nick PRIVMSG #chan :this is a message with spaces").unwrap();
+        assert_eq!(msg.params, vec!["#chan", "this is a message with spaces"]);
     }
 
     #[test]
@@ -315,34 +304,26 @@ mod tests {
 
     #[test]
     fn parse_kick_with_reason() {
-        let msg =
-            IrcMessage::parse(":op!user@host KICK #channel badnick :You are kicked")
-                .unwrap();
+        let msg = IrcMessage::parse(":op!user@host KICK #channel badnick :You are kicked").unwrap();
         assert_eq!(msg.command, "KICK");
-        assert_eq!(
-            msg.params,
-            vec!["#channel", "badnick", "You are kicked"]
-        );
+        assert_eq!(msg.params, vec!["#channel", "badnick", "You are kicked"]);
     }
 
     #[test]
     fn nick_extraction() {
-        let msg =
-            IrcMessage::parse(":testnick!testuser@testhost PRIVMSG #chan :hi").unwrap();
+        let msg = IrcMessage::parse(":testnick!testuser@testhost PRIVMSG #chan :hi").unwrap();
         assert_eq!(msg.nick(), Some("testnick"));
     }
 
     #[test]
     fn user_extraction() {
-        let msg =
-            IrcMessage::parse(":testnick!testuser@testhost PRIVMSG #chan :hi").unwrap();
+        let msg = IrcMessage::parse(":testnick!testuser@testhost PRIVMSG #chan :hi").unwrap();
         assert_eq!(msg.user(), Some("testuser"));
     }
 
     #[test]
     fn host_extraction() {
-        let msg =
-            IrcMessage::parse(":testnick!testuser@testhost PRIVMSG #chan :hi").unwrap();
+        let msg = IrcMessage::parse(":testnick!testuser@testhost PRIVMSG #chan :hi").unwrap();
         assert_eq!(msg.host(), Some("testhost"));
     }
 
@@ -354,8 +335,7 @@ mod tests {
 
     #[test]
     fn display_matches_to_raw() {
-        let msg =
-            IrcMessage::parse(":nick!user@host PRIVMSG #channel :Hello world").unwrap();
+        let msg = IrcMessage::parse(":nick!user@host PRIVMSG #channel :Hello world").unwrap();
         assert_eq!(format!("{}", msg), msg.to_raw());
     }
 

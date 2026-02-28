@@ -8,7 +8,7 @@ use crate::error::{BitchXError, Result};
 
 pub enum IrcStream {
     Plain(TcpStream),
-    Tls(TlsStream<TcpStream>),
+    Tls(Box<TlsStream<TcpStream>>),
 }
 
 pub struct IrcConnection {
@@ -27,12 +27,7 @@ enum IrcWriter {
 }
 
 impl IrcConnection {
-    pub async fn connect(
-        host: &str,
-        port: u16,
-        use_tls: bool,
-        verify_certs: bool,
-    ) -> Result<Self> {
+    pub async fn connect(host: &str, port: u16, use_tls: bool, verify_certs: bool) -> Result<Self> {
         let tcp = TcpStream::connect((host, port)).await?;
 
         if use_tls {
@@ -92,7 +87,7 @@ impl IrcConnection {
         if n == 0 {
             return Ok(None);
         }
-        let trimmed = line.trim_end_matches(|c| c == '\r' || c == '\n').to_string();
+        let trimmed = line.trim_end_matches(['\r', '\n']).to_string();
         Ok(Some(trimmed))
     }
 
@@ -126,7 +121,7 @@ impl ConnectionReader {
         if n == 0 {
             return Ok(None);
         }
-        let trimmed = line.trim_end_matches(|c| c == '\r' || c == '\n').to_string();
+        let trimmed = line.trim_end_matches(['\r', '\n']).to_string();
         Ok(Some(trimmed))
     }
 }
@@ -221,10 +216,9 @@ mod tests {
             received
         });
 
-        let mut conn =
-            IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-                .await
-                .unwrap();
+        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
+            .await
+            .unwrap();
 
         conn.send("PING :token").await.unwrap();
         let response = conn.recv().await.unwrap();
@@ -244,10 +238,9 @@ mod tests {
             drop(sock);
         });
 
-        let mut conn =
-            IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-                .await
-                .unwrap();
+        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
+            .await
+            .unwrap();
 
         server.await.unwrap();
         let result = conn.recv().await.unwrap();
@@ -270,10 +263,9 @@ mod tests {
             received
         });
 
-        let conn =
-            IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-                .await
-                .unwrap();
+        let conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
+            .await
+            .unwrap();
 
         let (mut reader, mut writer) = conn.split();
 
@@ -297,10 +289,9 @@ mod tests {
             String::from_utf8_lossy(&buf[..n]).to_string()
         });
 
-        let mut conn =
-            IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-                .await
-                .unwrap();
+        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
+            .await
+            .unwrap();
 
         conn.send("QUIT :bye\r\n").await.unwrap();
         drop(conn);
@@ -322,10 +313,9 @@ mod tests {
             drop(sock);
         });
 
-        let mut conn =
-            IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-                .await
-                .unwrap();
+        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
+            .await
+            .unwrap();
 
         server.await.unwrap();
 
