@@ -1,52 +1,70 @@
 # AGENTS.md
 
+## Project overview
+
+BitchX is a terminal-based IRC (Internet Relay Chat) client. The original codebase is written in C (version 1.2c02, GNU Autotools build system). This project is being **rewritten in Rust**.
+
 ## Cursor Cloud specific instructions
 
-### Overview
+### Installed cursor rules and skills
 
-BitchX is a terminal-based IRC (Internet Relay Chat) client written in C, using GNU Autotools for its build system. Version 1.2c02.
+The `.cursor/` directory contains rules and skills for AI-assisted development:
 
-### Build prerequisites (system packages)
+| Source | What it provides | Location |
+|--------|-----------------|----------|
+| **heyAyushh/stacc** | Karpathy guidelines, clean-code rules, commit/PR format, Rust & TypeScript stack rules, various skills | `.cursor/rules/*.mdc`, `.cursor/skills/` |
+| **tyrchen/cursor-rust-rules** | Modular Rust rules (core, quality, features, simple/complex project patterns) | `.cursor/rules/rust/` |
+| **awesome-cursor-rules-mdc** | Community Rust best practices | `.cursor/rules/awesome-rust.mdc` |
 
-- `gcc`, `make`, `autoconf`, `libncurses-dev` (required)
-- `libssl-dev` (optional; see SSL caveat below)
+Key skills in `.cursor/skills/`:
+- `karpathy-guidelines/` -- behavioral guidelines to reduce common LLM coding mistakes
+- `rust/` -- Rust stack skill
+- `typescript/` -- TypeScript stack skill
+- `bash-expert/`, `agent-browser/`, `changelog-generator/`, `find-skills/`, `skill-creator/`, `mcp-builder/`, `frontend-design/`
 
-### Building
+### Legacy C codebase (reference only)
 
+The original C code serves as reference for the Rust rewrite.
+
+**Building the C version** (for reference/comparison):
 ```
+sudo apt-get install -y autoconf libncurses-dev
 CFLAGS="-g -O2 -fcommon" ./configure --with-plugins --without-ssl
 make
 ```
 
-- **`-fcommon` is required** with GCC 10+. Without it, the linker will fail with "multiple definition" errors for global symbols like `no_hook_notify` and `serv_open_func`.
-- The configure script checks for the legacy `SSLeay` function, which was removed in OpenSSL 3.x. Use `--without-ssl` on systems with OpenSSL 3+ to avoid configure failure.
-- The binary is produced at `source/BitchX`.
-- Plugins (`.so` files) are built in `dll/*/` subdirectories.
+Caveats:
+- `-fcommon` is required with GCC 10+ to avoid "multiple definition" linker errors.
+- `--without-ssl` is needed on OpenSSL 3.x (the configure script checks for the removed `SSLeay` function).
+- Binary: `source/BitchX`, plugins: `dll/*/*.so`.
+- No automated test suite exists for the C codebase.
 
-### Running
+### Running the C version
 
 ```
 ./source/BitchX -n <nickname> <server>
 ```
 
-Use `-N` to skip auto-connect, `-d` for dumb terminal mode. See `./source/BitchX --help` for all flags.
+To test locally: install `ngircd`, start it, then connect to `localhost`.
 
-To test locally, install `ngircd` and run it, then connect to `localhost`.
+### Rust rewrite
 
-### Lint / Static analysis
-
-No dedicated linter is configured. The build uses `-Wall` which produces many warnings (expected for this legacy C codebase). A clean build (zero errors) is the baseline.
-
-### Tests
-
-There is no automated test suite in this codebase. Verification is done by building and running the binary.
+When the Rust rewrite is underway:
+- Build: `cargo build`
+- Test: `cargo test`
+- Lint: `cargo clippy`
+- Format: `cargo fmt --check`
+- All four must pass before code is considered complete.
+- See `.cursor/rules/rust/main.mdc` for the full rule loading system (core, quality, features).
 
 ### Key directories
 
 | Directory | Purpose |
 |-----------|---------|
-| `source/` | C source files and built binary |
-| `include/` | Header files |
-| `dll/` | Plugin modules |
+| `source/` | Original C source files |
+| `include/` | Original C header files |
+| `dll/` | Original C plugin modules |
 | `script/` | IRC scripts |
 | `bitchx-docs/` | Help documentation |
+| `.cursor/rules/` | Cursor AI rules (Rust, C, clean-code, etc.) |
+| `.cursor/skills/` | Cursor AI skills (karpathy, rust, typescript, etc.) |
