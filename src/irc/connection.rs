@@ -31,6 +31,8 @@ impl IrcConnection {
         let tcp = TcpStream::connect((host, port)).await?;
 
         if use_tls {
+            let _ = rustls::crypto::ring::default_provider().install_default();
+
             let config = if verify_certs {
                 rustls::ClientConfig::builder()
                     .with_root_certificates(root_store())

@@ -29,9 +29,9 @@ struct Cli {
     #[arg(short = 'f', long)]
     config: Option<std::path::PathBuf>,
 
-    /// Use TLS (default: true)
-    #[arg(long, default_value_t = true)]
-    tls: bool,
+    /// Disable TLS (connect in plain text)
+    #[arg(long)]
+    no_tls: bool,
 
     /// Port number (default: 6697 for TLS, 6667 for plain)
     #[arg(short, long)]
@@ -107,11 +107,12 @@ async fn main() -> Result<()> {
     }
 
     if let Some(server_str) = &cli.server {
-        let (host, port) = parse_server(server_str, cli.port, cli.tls);
+        let use_tls = !cli.no_tls;
+        let (host, port) = parse_server(server_str, cli.port, use_tls);
         let server_config = ServerConfig {
             host,
             port,
-            tls: cli.tls,
+            tls: use_tls,
             password: cli.password.clone(),
             sasl_user: None,
             sasl_pass: None,
@@ -273,7 +274,7 @@ mod tests {
         assert!(cli.server.is_none());
         assert!(cli.channel.is_none());
         assert!(cli.config.is_none());
-        assert!(cli.tls);
+        assert!(!cli.no_tls);
         assert!(cli.port.is_none());
         assert!(!cli.no_verify);
         assert!(!cli.dumb);
