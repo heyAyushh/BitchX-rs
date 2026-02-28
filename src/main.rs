@@ -124,8 +124,12 @@ async fn main() -> Result<()> {
         }
     }
 
-    if !cli.no_ansi {
+    if !cli.no_ansi && !cli.dumb {
         bitchx::ui::ansi_art::print_startup_banner();
+        println!("  Press any key to continue...");
+        crossterm::terminal::enable_raw_mode()?;
+        let _ = crossterm::event::read();
+        crossterm::terminal::disable_raw_mode()?;
     }
 
     let (client, cmd_tx, event_rx) = IrcClient::new();
