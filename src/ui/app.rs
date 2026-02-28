@@ -10,6 +10,7 @@ use crate::config::Config;
 use crate::irc::channel::{Channel, ChannelUser, ChatMessage, MessageKind};
 use crate::irc::client::{ClientCommand, IrcEvent};
 use crate::irc::message::IrcMessage;
+use crate::plugin::loader::PluginManager;
 
 use super::input::{InputAction, InputState};
 use super::widgets::chat::ChatWidget;
@@ -30,6 +31,7 @@ pub struct App {
     pub running: bool,
     pub lag_ms: Option<u64>,
     pub config: Config,
+    pub plugin_manager: PluginManager,
 
     event_rx: mpsc::UnboundedReceiver<IrcEvent>,
     cmd_tx: mpsc::UnboundedSender<ClientCommand>,
@@ -48,6 +50,11 @@ impl App {
             .map(|s| s.host.clone())
             .unwrap_or_else(|| "localhost".into());
 
+        let plugin_dir = dirs::home_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join(".bitchx")
+            .join("plugins");
+
         Self {
             channels: HashMap::new(),
             active_channel: None,
@@ -61,6 +68,7 @@ impl App {
             running: true,
             lag_ms: None,
             config,
+            plugin_manager: PluginManager::new(plugin_dir),
             event_rx,
             cmd_tx,
         }
@@ -102,6 +110,8 @@ impl App {
                     } else {
                         (MessageKind::Normal, text.to_string())
                     };
+                    let msg_sender = nick.clone();
+                    let msg_content = content.clone();
                     let chat_msg = ChatMessage {
                         timestamp: Utc::now(),
                         sender: nick,
@@ -122,6 +132,17 @@ impl App {
                             &format!("<{}> {}", chat_msg.sender, chat_msg.content),
                             MessageKind::Normal,
                         );
+                    }
+
+                    let plugin_responses = self.plugin_manager.dispatch_message(
+                        &msg_sender,
+                        &channel_name,
+                        &msg_content,
+                    );
+                    for (_plugin_name, response) in plugin_responses {
+                        let _ = self
+                            .cmd_tx
+                            .send(ClientCommand::Privmsg(channel_name.clone(), response));
                     }
                 }
             }
@@ -445,6 +466,82 @@ impl App {
                             target_nick.clone(),
                             reason,
                         ));
+                    }
+                }
+            }
+            "LOADDLL" => {
+                if let Some(path_str) = args.first() {
+                    let path = std::path::Path::new(path_str);
+                    match self.plugin_manager.load(path) {
+                        Ok(name) => {
+                            self.add_server_message(
+                                &format!("Plugin '{}' loaded successfully", name),
+                                MessageKind::System,
+                            );
+                        }
+                        Err(e) => {
+                            self.add_server_message(
+                                &format!("Failed to load plugin: {}", e),
+                                MessageKind::Error,
+                            );
+                        }
+                    }
+                } else {
+                    self.add_server_message(
+                        "Usage: /loaddll <path>",
+                        MessageKind::Error,
+                    );
+                }
+            }
+            "UNLOADDLL" => {
+                if let Some(name) = args.first() {
+                    match self.plugin_manager.unload(name) {
+                        Ok(()) => {
+                            self.add_server_message(
+                                &format!("Plugin '{}' unloaded successfully", name),
+                                MessageKind::System,
+                            );
+                        }
+                        Err(e) => {
+                            self.add_server_message(
+                                &format!("Failed to unload plugin: {}", e),
+                                MessageKind::Error,
+                            );
+                        }
+                    }
+                } else {
+                    self.add_server_message(
+                        "Usage: /unloaddll <name>",
+                        MessageKind::Error,
+                    );
+                }
+            }
+            "LISTDLL" => {
+                let plugins: Vec<(String, String, String, String)> = self
+                    .plugin_manager
+                    .list()
+                    .into_iter()
+                    .map(|(n, v, d, p)| {
+                        (
+                            n.to_string(),
+                            v.to_string(),
+                            d.to_string(),
+                            p.display().to_string(),
+                        )
+                    })
+                    .collect();
+                if plugins.is_empty() {
+                    self.add_server_message("No plugins loaded", MessageKind::System);
+                } else {
+                    self.add_server_message(
+                        &format!("Loaded plugins ({}):", plugins.len()),
+                        MessageKind::System,
+                    );
+                    for (name, version, description, path) in &plugins {
+                        self.add_server_message(
+                            &format!("  {} v{} - {} ({})", name, version, description, path),
+                            MessageKind::System,
+                        );
                     }
                 }
             }
