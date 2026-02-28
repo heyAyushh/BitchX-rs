@@ -57,13 +57,15 @@ When the Rust rewrite is underway:
 - All four must pass before code is considered complete.
 - See `.cursor/rules/rust/main.mdc` for the full rule loading system (core, quality, features).
 
-### Pre-existing test failures
-
-Two tests in `irc::encrypt` and `irc::dcc` fail independently of your changes. Do not treat these as blockers for UI or other module work.
-
 ### Rust module structure
 
 The Rust rewrite lives under `src/`. Modules being implemented in parallel (by different agents) include `irc/`, `ui/`, `plugin/`, `scripting/`, and `config`. Stubs exist for modules not yet implemented. When writing new code that depends on a stub, define compatible types locally or import from the stub and handle compilation gracefully.
+
+### Crypto crate API notes
+
+- `cbc` 0.1.2 with `cipher` 0.4.4: use `encrypt_padded_mut`/`decrypt_padded_mut` (not `*_vec_mut` variants). Import `BlockEncryptMut`/`BlockDecryptMut` from `cbc::cipher`.
+- Blowfish minimum key length is 4 bytes.
+- `aes-gcm` 0.10: use `Aes256Gcm::generate_nonce(&mut OsRng)` for nonce generation.
 
 ### Key directories
 
