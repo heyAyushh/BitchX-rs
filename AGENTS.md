@@ -67,6 +67,12 @@ The Rust rewrite lives under `src/`. Modules being implemented in parallel (by d
 - Blowfish minimum key length is 4 bytes.
 - `aes-gcm` 0.10: use `Aes256Gcm::generate_nonce(&mut OsRng)` for nonce generation.
 
+### Testing caveats
+
+- Some `irc::client::tests` (e.g. `client_quit_command`, `client_disconnect_event_on_server_close`) may hang or fail intermittently due to TCP timing in the test mock server. Skip them with `--skip irc::client::tests::client_quit_command --skip irc::client::tests::client_disconnect` if they block your test run.
+- `cargo fmt --check` reports diffs in pre-existing files (e.g. `client.rs`). Only your own modified files need to pass format checks.
+- The binary runs with `cargo run -- --help` or `./target/debug/bitchx --help`. Use `--dumb` mode for non-interactive testing without a TUI.
+
 ### Key directories
 
 | Directory | Purpose |
