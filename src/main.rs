@@ -9,8 +9,8 @@ use bitchx::ui::app::App;
 #[derive(Parser)]
 #[command(
     name = "bitchx",
-    version = "2.0.0",
-    about = "BitchX IRC Client - Rust Rewrite"
+    version,
+    about = "BitchX 2.0.0-rs - relay (リレー) release candidate"
 )]
 struct Cli {
     /// Nickname to use

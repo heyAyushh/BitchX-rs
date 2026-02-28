@@ -25,7 +25,7 @@ pub const LOGO_0: &str = concat!(
     "  \x1b[30;44m░\x1b[34;40m▓\x1b[1;44m░\x1b[0;34m▌▀\x1b[1m▀\x1b[0;34m▀ \x1b[37m \x1b[35m \x1b[37m \x1b[35m▀\x1b[1m▀▀\x1b[0m\x1b[3C\x1b[34m▄\x1b[1;44m▄█▀█\x1b[47m▓▓\x1b[44m█▀\x1b[40m▀▀\x1b[0;34m▀   \x1b[37m \x1b[34m▀▀\x1b[1m▀\x1b[44m▀█▄\x1b[40m▄▄▄\x1b[44m▄█▀\x1b[40m▀▀\x1b[0;34m▀ \x1b[35m▄\x1b[1m▄\x1b[45m▄\x1b[47m▀\x1b[45m█▄\x1b[0;35m▄\x1b[37m  \x1b[34m▀\x1b[1;44m▀██\x1b[46m▀\x1b[44m█\x1b[0;34m█  \x1b[37m \x1b[34m █▄    \x1b[37m\n",
     "  \x1b[34m░\x1b[30;44m▓\x1b[34;40m      \x1b[37m \x1b[34m \x1b[37m \x1b[34m▄\x1b[1m▄▄▄\x1b[44m▄\x1b[40m███\x1b[44m▌\x1b[0;34m▌\x1b[1;44m▐▀\x1b[0;34m▀\x1b[37m \x1b[34m        \x1b[37m\x1b[5C\x1b[34m▀\x1b[1;44m▀██▄\x1b[0;34m▄  \x1b[35m▀█\x1b[1;45m▀\x1b[47m█▄ ░▓\x1b[45m▓░\x1b[0;35m▌ \x1b[37m \x1b[34m▐\x1b[1;44m▐\x1b[46m▓▓\x1b[44m▓░\x1b[0;34m▌\x1b[37m  \x1b[34m  \x1b[37m\n",
     "  \x1b[34m \x1b[37m\x1b[14C\x1b[35m     \x1b[37m \x1b[1;34;44m▐\x1b[0;34m▌\x1b[37m\x1b[4C\x1b[1;30mP\x1b[41mh\x1b[40monyEye\x1b[0;34m   \x1b[37m \x1b[34m▐\x1b[1;44m▐█▓░\x1b[0;34m▌  \x1b[35m▐\x1b[1;45m ▐▀█\x1b[47m▓\x1b[45m█▀\x1b[0;35m▀\x1b[34m   \x1b[35m         \x1b[34m \x1b[37m\n",
-    "\x1b[4C\x1b[34m[\x1b[37m  BitchX 2.0   \x1b[34m]\x1b[35m \x1b[37m \x1b[1;34m▐\x1b[0;34m▀\x1b[37m\x1b[4C\x1b[1;30m^\x1b[0m\x1b[10C\x1b[34m▄\x1b[1;44m▄█▀\x1b[40m▀\x1b[0;34m▀\x1b[37m  \x1b[35m▄█\x1b[1;45m ▀\x1b[0;35m▌▀▀░\x1b[30;45m▓\x1b[37;40m\x1b[8C\x1b[1;30mAwe/Cia\x1b[0m\n",
+    "\x1b[4C\x1b[34m[\x1b[37mBitchX 2.0.0-rs\x1b[34m]\x1b[35m \x1b[37m \x1b[1;34m▐\x1b[0;34m▀\x1b[37m\x1b[4C\x1b[1;30m^\x1b[0m\x1b[10C\x1b[34m▄\x1b[1;44m▄█▀\x1b[40m▀\x1b[0;34m▀\x1b[37m  \x1b[35m▄█\x1b[1;45m ▀\x1b[0;35m▌▀▀░\x1b[30;45m▓\x1b[37;40m\x1b[8C\x1b[1;30mAwe/Cia\x1b[0m\n",
     "\x1b[10C\x1b[35m          \x1b[34m   \x1b[1m▀\x1b[0;34m    \x1b[37m\x1b[9C\x1b[34m██ ▀\x1b[37m\x1b[5C\x1b[35m   \x1b[34m   \x1b[35m▌\x1b[37m\x1b[7C\x1b[0m\n",
     "\x1b[1;30m          \x1b[0;35m          \x1b[37m\x1b[32C\x1b[35m▀\x1b[37m\x1b[14C\x1b[35m   \x1b[37m\n",
     "\x1b[10C\x1b[35m             \x1b[37m\n",
@@ -364,7 +364,7 @@ pub fn print_ansi_logo() {
 pub fn print_startup_banner() {
     print_ansi_logo();
     println!();
-    println!("  \x1b[1;36mBitchX 2.0\x1b[0m - \x1b[35mRust Rewrite\x1b[0m");
+    println!("  \x1b[1;36mBitchX 2.0.0-rs\x1b[0m - \x1b[35mrelay (リレー) release candidate\x1b[0m");
     println!("  Type \x1b[1m/help\x1b[0m for commands");
     println!();
 }

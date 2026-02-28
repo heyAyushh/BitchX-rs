@@ -3,9 +3,9 @@ members = [".", "plugins/hello", "plugins/greet"]
 
 [package]
 name = "bitchx"
-version = "2.0.0"
+version = "2.0.0-rs"
 edition = "2021"
-description = "BitchX IRC client - Rust rewrite with modern TLS and security"
+description = "BitchX IRC client - relay (リレー) release candidate"
 license = "BSD-3-Clause"
 readme = "README.md"
 
