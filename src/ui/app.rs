@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use chrono::Utc;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{Event, EventStream, KeyCode, KeyEventKind, KeyModifiers};
+use futures::StreamExt;
 use ratatui::prelude::*;
 use tokio::sync::mpsc;
 
@@ -579,6 +580,8 @@ impl App {
     }
 
     pub async fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> anyhow::Result<()> {
+        let mut reader = EventStream::new();
+
         while self.running {
             terminal.draw(|f| self.render(f))?;
 
@@ -586,23 +589,18 @@ impl App {
                 Some(irc_event) = self.event_rx.recv() => {
                     self.handle_irc_event(irc_event);
                 }
-                result = async {
-                    loop {
-                        if event::poll(std::time::Duration::from_millis(50)).unwrap_or(false) {
-                            return event::read();
+                Some(Ok(event)) = reader.next() => {
+                    if let Event::Key(key) = event {
+                        if key.kind == KeyEventKind::Press {
+                            if key.modifiers.contains(KeyModifiers::CONTROL)
+                                && key.code == KeyCode::Char('c')
+                            {
+                                self.running = false;
+                                break;
+                            }
+                            let action = self.input.handle_key(key);
+                            self.handle_input_action(action);
                         }
-                        tokio::task::yield_now().await;
-                    }
-                } => {
-                    if let Ok(Event::Key(key)) = result {
-                        if key.modifiers.contains(KeyModifiers::CONTROL)
-                            && key.code == KeyCode::Char('c')
-                        {
-                            self.running = false;
-                            break;
-                        }
-                        let action = self.input.handle_key(key);
-                        self.handle_input_action(action);
                     }
                 }
             }
