@@ -51,7 +51,7 @@ impl Theme {
 
     pub fn status_bar() -> Style {
         Style::default()
-            .fg(Color::Reset)
+            .fg(Color::White)
             .bg(Color::Blue)
             .add_modifier(Modifier::BOLD)
     }
