@@ -10,7 +10,7 @@ use bitchx::ui::app::App;
 #[command(
     name = "bitchx",
     version,
-    about = "BitchX 2.0.0-rs - relay (リレー) release candidate"
+    about = "BitchX 2.0.0-rs - relay (リレー) alpha"
 )]
 struct Cli {
     /// Nickname to use

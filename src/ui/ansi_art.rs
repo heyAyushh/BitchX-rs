@@ -364,7 +364,7 @@ pub fn print_ansi_logo() {
 pub fn print_startup_banner() {
     print_ansi_logo();
     println!();
-    println!("  \x1b[1;36mBitchX 2.0.0-rs\x1b[0m - \x1b[35mrelay (リレー) release candidate\x1b[0m");
+    println!("  \x1b[1;36mBitchX 2.0.0-rs\x1b[0m - \x1b[35mrelay (リレー) alpha\x1b[0m");
     println!("  Type \x1b[1m/help\x1b[0m for commands");
     println!();
 }

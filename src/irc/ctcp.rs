@@ -33,7 +33,7 @@ impl CtcpMessage {
     }
 
     pub fn version_reply() -> String {
-        Self::encode("VERSION", Some("BitchX 2.0.0-rs - relay (リレー) release candidate"))
+        Self::encode("VERSION", Some("BitchX 2.0.0-rs - relay (リレー) alpha"))
     }
 
     pub fn ping_reply(token: &str) -> String {

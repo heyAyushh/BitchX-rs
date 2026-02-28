@@ -208,7 +208,7 @@ fn default_username() -> String {
     whoami().unwrap_or_else(|| "bitchx".into())
 }
 fn default_realname() -> String {
-    "BitchX 2.0.0-rs - relay (リレー) release candidate".into()
+    "BitchX 2.0.0-rs - relay (リレー) alpha".into()
 }
 fn default_port() -> u16 {
     6697
@@ -348,7 +348,7 @@ mod tests {
         assert_eq!(config.nick, default_nick());
         assert!(config.alt_nicks.is_empty());
         assert_eq!(config.username, default_username());
-        assert_eq!(config.realname, "BitchX 2.0.0-rs - relay (リレー) release candidate");
+        assert_eq!(config.realname, "BitchX 2.0.0-rs - relay (リレー) alpha");
         assert!(config.servers.is_empty());
         assert!(config.auto_join.is_empty());
     }
@@ -413,7 +413,7 @@ mod tests {
     #[test]
     fn default_values_are_correct() {
         let config = Config::default();
-        assert_eq!(config.realname, "BitchX 2.0.0-rs - relay (リレー) release candidate");
+        assert_eq!(config.realname, "BitchX 2.0.0-rs - relay (リレー) alpha");
         assert!(config.servers.is_empty());
         assert!(config.auto_join.is_empty());
 
