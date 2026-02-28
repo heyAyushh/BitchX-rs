@@ -60,9 +60,9 @@ impl IrcClient {
                 }
                 Some(ClientCommand::Quit(_)) | None => break,
                 _ => {
-                    let _ = self.event_tx.send(IrcEvent::Error(
-                        "Not connected to any server".into(),
-                    ));
+                    let _ = self
+                        .event_tx
+                        .send(IrcEvent::Error("Not connected to any server".into()));
                 }
             }
         }
@@ -264,21 +264,14 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
+
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
+
+        let connected = tokio::time::timeout(tokio::time::Duration::from_secs(2), event_rx.recv())
+            .await
+            .unwrap()
             .unwrap();
-
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
-
-        let connected = tokio::time::timeout(
-            tokio::time::Duration::from_secs(2),
-            event_rx.recv(),
-        )
-        .await
-        .unwrap()
-        .unwrap();
 
         assert!(
             matches!(connected, IrcEvent::Connected),
@@ -295,7 +288,10 @@ mod tests {
         assert!(data.contains("CAP REQ"), "Should send CAP REQ, got: {data}");
         assert!(data.contains("NICK"), "Should send NICK, got: {data}");
         assert!(data.contains("USER"), "Should send USER, got: {data}");
-        assert!(data.contains("testbot"), "Should use configured nick, got: {data}");
+        assert!(
+            data.contains("testbot"),
+            "Should use configured nick, got: {data}"
+        );
         assert!(data.contains("CAP END"), "Should send CAP END, got: {data}");
     }
 
@@ -345,13 +341,9 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
@@ -392,23 +384,16 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         let mut got_welcome = false;
         let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(2);
 
         while tokio::time::Instant::now() < deadline {
-            match tokio::time::timeout(
-                tokio::time::Duration::from_millis(200),
-                event_rx.recv(),
-            )
-            .await
+            match tokio::time::timeout(tokio::time::Duration::from_millis(200), event_rx.recv())
+                .await
             {
                 Ok(Some(IrcEvent::Message(msg))) => {
                     if msg.command == "001" {
@@ -470,13 +455,9 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
@@ -540,13 +521,9 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
@@ -558,11 +535,8 @@ mod tests {
         let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(2);
 
         while tokio::time::Instant::now() < deadline {
-            match tokio::time::timeout(
-                tokio::time::Duration::from_millis(200),
-                event_rx.recv(),
-            )
-            .await
+            match tokio::time::timeout(tokio::time::Duration::from_millis(200), event_rx.recv())
+                .await
             {
                 Ok(Some(IrcEvent::Disconnected(reason))) => {
                     assert_eq!(reason, "Client quit");
@@ -624,13 +598,9 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
@@ -667,27 +637,22 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         let mut got_disconnect = false;
         let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(2);
 
         while tokio::time::Instant::now() < deadline {
-            match tokio::time::timeout(
-                tokio::time::Duration::from_millis(200),
-                event_rx.recv(),
-            )
-            .await
+            match tokio::time::timeout(tokio::time::Duration::from_millis(200), event_rx.recv())
+                .await
             {
                 Ok(Some(IrcEvent::Disconnected(reason))) => {
                     assert!(
-                        reason.contains("closed") || reason.contains("reset") || reason.contains("error"),
+                        reason.contains("closed")
+                            || reason.contains("reset")
+                            || reason.contains("error"),
                         "Unexpected disconnect reason: {reason}"
                     );
                     got_disconnect = true;
@@ -698,7 +663,10 @@ mod tests {
             }
         }
 
-        assert!(got_disconnect, "Should receive Disconnected event when server closes");
+        assert!(
+            got_disconnect,
+            "Should receive Disconnected event when server closes"
+        );
 
         drop(cmd_tx);
         let _ = client_handle.await;
@@ -718,23 +686,16 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         let mut got_error = false;
         let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(2);
 
         while tokio::time::Instant::now() < deadline {
-            match tokio::time::timeout(
-                tokio::time::Duration::from_millis(200),
-                event_rx.recv(),
-            )
-            .await
+            match tokio::time::timeout(tokio::time::Duration::from_millis(200), event_rx.recv())
+                .await
             {
                 Ok(Some(IrcEvent::Error(msg))) => {
                     assert!(msg.contains("Failed to connect"), "Error: {msg}");
@@ -746,7 +707,10 @@ mod tests {
             }
         }
 
-        assert!(got_error, "Should receive Error event on connection failure");
+        assert!(
+            got_error,
+            "Should receive Error event on connection failure"
+        );
 
         drop(cmd_tx);
         let _ = client_handle.await;
@@ -800,13 +764,9 @@ mod tests {
             sasl_pass: None,
         };
 
-        cmd_tx
-            .send(ClientCommand::Connect(server_config))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
@@ -865,9 +825,7 @@ mod tests {
 
         cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
@@ -932,15 +890,11 @@ mod tests {
 
         cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
 
-        let client_handle = tokio::spawn(async move {
-            client.run(&config).await
-        });
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-        cmd_tx
-            .send(ClientCommand::Join("#mychan".into()))
-            .unwrap();
+        cmd_tx.send(ClientCommand::Join("#mychan".into())).unwrap();
 
         tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 

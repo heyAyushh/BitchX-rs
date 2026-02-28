@@ -1,1 +1,24 @@
 /target/
+
+# C build artifacts
+*.o
+*.so
+*.a
+config.log
+config.status
+.config.h
+stamp-h
+stamp-h[0-9]*
+include/defs.h
+include/sig.inc
+source/BitchX
+source/wserv
+source/scr-bx
+source/Makefile
+bx-conf/Makefile
+dll/Makefile
+dll/*/Makefile
+dll/aim/toc/Makefile
+doc/BitchX.bat
+doc/Makefile
+bxconfigure

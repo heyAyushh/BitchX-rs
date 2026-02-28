@@ -189,10 +189,7 @@ mod tests {
 
     #[test]
     fn test_quit_with_reason() {
-        assert_eq!(
-            IrcCommand::quit(Some("Leaving")),
-            "QUIT :Leaving\r\n"
-        );
+        assert_eq!(IrcCommand::quit(Some("Leaving")), "QUIT :Leaving\r\n");
     }
 
     #[test]
@@ -321,10 +318,7 @@ mod tests {
 
     #[test]
     fn test_authenticate() {
-        assert_eq!(
-            IrcCommand::authenticate("PLAIN"),
-            "AUTHENTICATE :PLAIN\r\n"
-        );
+        assert_eq!(IrcCommand::authenticate("PLAIN"), "AUTHENTICATE :PLAIN\r\n");
     }
 
     #[test]
@@ -362,7 +356,10 @@ mod tests {
             IrcCommand::authenticate("PLAIN"),
         ];
         for cmd in &commands {
-            assert!(cmd.ends_with("\r\n"), "Command does not end with CRLF: {cmd}");
+            assert!(
+                cmd.ends_with("\r\n"),
+                "Command does not end with CRLF: {cmd}"
+            );
         }
     }
 }

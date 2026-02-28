@@ -68,36 +68,32 @@ pub fn parse_mode_changes(mode_str: &str, params: &[String]) -> Vec<ModeChange> 
 impl ChannelModes {
     pub fn apply(&mut self, change: &ModeChange) {
         match change {
-            ModeChange::Add(mode, param) => {
-                match *mode {
-                    'k' => {
-                        self.key = param.clone();
-                        self.flags.insert('k');
-                    }
-                    'l' => {
-                        self.limit = param.as_ref().and_then(|p| p.parse().ok());
-                        self.flags.insert('l');
-                    }
-                    _ => {
-                        self.flags.insert(*mode);
-                    }
+            ModeChange::Add(mode, param) => match *mode {
+                'k' => {
+                    self.key = param.clone();
+                    self.flags.insert('k');
                 }
-            }
-            ModeChange::Remove(mode, _param) => {
-                match *mode {
-                    'k' => {
-                        self.key = None;
-                        self.flags.remove(&'k');
-                    }
-                    'l' => {
-                        self.limit = None;
-                        self.flags.remove(&'l');
-                    }
-                    _ => {
-                        self.flags.remove(mode);
-                    }
+                'l' => {
+                    self.limit = param.as_ref().and_then(|p| p.parse().ok());
+                    self.flags.insert('l');
                 }
-            }
+                _ => {
+                    self.flags.insert(*mode);
+                }
+            },
+            ModeChange::Remove(mode, _param) => match *mode {
+                'k' => {
+                    self.key = None;
+                    self.flags.remove(&'k');
+                }
+                'l' => {
+                    self.limit = None;
+                    self.flags.remove(&'l');
+                }
+                _ => {
+                    self.flags.remove(mode);
+                }
+            },
         }
     }
 
@@ -167,8 +163,7 @@ mod tests {
 
     #[test]
     fn parse_minus_o_plus_v() {
-        let changes =
-            parse_mode_changes("-o+v", &["nick1".into(), "nick2".into()]);
+        let changes = parse_mode_changes("-o+v", &["nick1".into(), "nick2".into()]);
         assert_eq!(
             changes,
             vec![
@@ -181,10 +176,7 @@ mod tests {
     #[test]
     fn parse_plus_k_secret() {
         let changes = parse_mode_changes("+k", &["secret".into()]);
-        assert_eq!(
-            changes,
-            vec![ModeChange::Add('k', Some("secret".into()))]
-        );
+        assert_eq!(changes, vec![ModeChange::Add('k', Some("secret".into()))]);
     }
 
     #[test]
@@ -198,8 +190,7 @@ mod tests {
 
     #[test]
     fn parse_plus_ov_two_nicks() {
-        let changes =
-            parse_mode_changes("+ov", &["nick1".into(), "nick2".into()]);
+        let changes = parse_mode_changes("+ov", &["nick1".into(), "nick2".into()]);
         assert_eq!(
             changes,
             vec![
@@ -214,10 +205,7 @@ mod tests {
         let changes = parse_mode_changes("+nt", &[]);
         assert_eq!(
             changes,
-            vec![
-                ModeChange::Add('n', None),
-                ModeChange::Add('t', None),
-            ]
+            vec![ModeChange::Add('n', None), ModeChange::Add('t', None),]
         );
     }
 
@@ -226,10 +214,7 @@ mod tests {
         let changes = parse_mode_changes("-nt", &[]);
         assert_eq!(
             changes,
-            vec![
-                ModeChange::Remove('n', None),
-                ModeChange::Remove('t', None),
-            ]
+            vec![ModeChange::Remove('n', None), ModeChange::Remove('t', None),]
         );
     }
 
@@ -337,8 +322,7 @@ mod tests {
 
     #[test]
     fn parse_ban_mode() {
-        let changes =
-            parse_mode_changes("+b", &["*!*@bad.host".into()]);
+        let changes = parse_mode_changes("+b", &["*!*@bad.host".into()]);
         assert_eq!(
             changes,
             vec![ModeChange::Add('b', Some("*!*@bad.host".into()))]
