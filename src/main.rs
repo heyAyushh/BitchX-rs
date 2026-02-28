@@ -125,7 +125,7 @@ async fn main() -> Result<()> {
     }
 
     if !cli.no_ansi {
-        print_banner();
+        bitchx::ui::ansi_art::print_startup_banner();
     }
 
     let (client, cmd_tx, event_rx) = IrcClient::new();
@@ -161,20 +161,6 @@ async fn main() -> Result<()> {
 
     client_handle.abort();
     Ok(())
-}
-
-fn print_banner() {
-    const BANNER: &str = r#"
- ____  _ _       _   __  __
-| __ )(_) |_ ___| |_\ \/ /
-|  _ \| | __/ __| '_ \\  /
-| |_) | | || (__| | | /  \
-|____/|_|\__\___|_| |_/_/\_\
-
-  BitchX 2.0 - Rust Rewrite
-  Type /help for commands
-"#;
-    println!("{BANNER}");
 }
 
 fn parse_server(server_str: &str, cli_port: Option<u16>, use_tls: bool) -> (String, u16) {
