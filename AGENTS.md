@@ -59,7 +59,7 @@ When the Rust rewrite is underway:
 
 ### Rust module structure
 
-The Rust rewrite lives under `src/`. Modules being implemented in parallel (by different agents) include `irc/`, `ui/`, `plugin/`, `scripting/`, and `config`. Stubs exist for modules not yet implemented. When writing new code that depends on a stub, define compatible types locally or import from the stub and handle compilation gracefully.
+The Rust rewrite lives under `src/`. Modules: `irc/` (connection, protocol, commands), `ui/` (TUI app, widgets, input), `plugin/` (C ABI plugin loader + macro helper), `scripting/` (alias engine), and `config`. The plugin system uses `libloading` for dynamic `.so` loading with a C ABI contract (`bitchx_plugin_*` symbols). Plugin commands: `/loaddll`, `/unloaddll`, `/listdll`.
 
 ### Crypto crate API notes
 
@@ -69,7 +69,7 @@ The Rust rewrite lives under `src/`. Modules being implemented in parallel (by d
 
 ### Testing caveats
 
-- All 248 tests pass reliably, including `irc::client` async tests with mock TCP servers.
+- All 266 tests pass reliably (251 lib + 15 bin), including `irc::client` async tests with mock TCP servers.
 - `cargo fmt --check` must pass. `cargo clippy` must produce zero warnings/errors.
 - `aws-lc-sys` (transitive dep via `rustls`) requires `cmake` and a C compiler at build time. These are pre-installed in the VM.
 
