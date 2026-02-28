@@ -46,7 +46,8 @@ impl<'a> Widget for NickListWidget<'a> {
         }
 
         let visible = inner.height as usize;
-        let items: Vec<ListItem<'_>> = self.users
+        let items: Vec<ListItem<'_>> = self
+            .users
             .iter()
             .take(visible)
             .map(|u| {
