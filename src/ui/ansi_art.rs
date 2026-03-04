@@ -1,6 +1,6 @@
 use rand::Rng;
 
-// Auto-generated from source/art.c - all ANSI block art variants
+// Auto-generated from the historical BitchX art source - all ANSI block art variants
 // CP437 block characters converted to Unicode, ESC bytes preserved
 // Original art by various artists including RaD Man & Ansichrist (ACiD)
 

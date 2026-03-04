@@ -2,7 +2,7 @@
 
 ## Project overview
 
-BitchX is a terminal-based IRC (Internet Relay Chat) client. The original codebase is written in C (version 1.2c02, GNU Autotools build system). This project is being **rewritten in Rust**.
+BitchX is a terminal-based IRC (Internet Relay Chat) client. This repository now tracks the Rust rewrite.
 
 ## Cursor Cloud specific instructions
 
@@ -21,31 +21,6 @@ Key skills in `.cursor/skills/`:
 - `rust/` -- Rust stack skill
 - `typescript/` -- TypeScript stack skill
 - `bash-expert/`, `agent-browser/`, `changelog-generator/`, `find-skills/`, `skill-creator/`, `mcp-builder/`, `frontend-design/`
-
-### Legacy C codebase (reference only)
-
-The original C code serves as reference for the Rust rewrite.
-
-**Building the C version** (for reference/comparison):
-```
-sudo apt-get install -y autoconf libncurses-dev
-CFLAGS="-g -O2 -fcommon" ./configure --with-plugins --without-ssl
-make
-```
-
-Caveats:
-- `-fcommon` is required with GCC 10+ to avoid "multiple definition" linker errors.
-- `--without-ssl` is needed on OpenSSL 3.x (the configure script checks for the removed `SSLeay` function).
-- Binary: `source/BitchX`, plugins: `dll/*/*.so`.
-- No automated test suite exists for the C codebase.
-
-### Running the C version
-
-```
-./source/BitchX -n <nickname> <server>
-```
-
-To test locally: install `ngircd`, start it, then connect to `localhost`.
 
 ### Rust rewrite
 
@@ -81,10 +56,7 @@ The root `Cargo.toml` defines a workspace with members `"."`, `"plugins/hello"`,
 
 | Directory | Purpose |
 |-----------|---------|
-| `source/` | Original C source files |
-| `include/` | Original C header files |
-| `dll/` | Original C plugin modules |
-| `script/` | IRC scripts |
+| `src/` | Rust source code (IRC core, UI, plugin loader, scripting) |
 | `bitchx-docs/` | Help documentation |
 | `.cursor/rules/` | Cursor AI rules (Rust, C, clean-code, etc.) |
 | `plugins/hello/` | Example "hello" plugin crate (`cdylib`) |
