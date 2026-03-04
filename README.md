@@ -1,4 +1,4 @@
-BitchX 2.0.0-rs Readme file by Ayush <heyayushh@gmail.com>
+BitchX 2.0.0-rs
 ===========================================================
 
 BitchX is an IRC (Internet Relay Chat) client originally written by Colten
@@ -8,8 +8,7 @@ its speed, built-in scripting, DCC support, and the raw personality of its
 interface. Development of the original C client wound down in the mid-2000s,
 leaving a piece of IRC history dormant.
 
-Now in 2025, BitchX is being brought back -- from scratch, in Rust. This is
-that effort.
+Now in 2026, BitchX is being brought back -- from scratch, in Rust.
 
 I am Ayush, and I am taking an ambitious shot at rewriting BitchX completely
 in Rust. The original client meant a lot to a generation of IRC users, and it
