@@ -46,6 +46,33 @@ To verify formatting:
 
     $ cargo fmt --check
 
+Installing BitchX-rs
+====================
+
+Prebuilt binaries are published on every version tag (`v*`) in GitHub Releases.
+
+1. Open the latest release:
+
+       https://github.com/heyAyushh/BitchX-rs/releases/latest
+
+2. Download the archive for your platform:
+   - Linux: `bitchx-<tag>-linux-<arch>.tar.gz`
+   - macOS: `bitchx-<tag>-macos-<arch>.tar.gz`
+   - Windows: `bitchx-<tag>-windows-<arch>.zip`
+
+3. Extract and place the binary in your `PATH`.
+
+Linux/macOS example:
+
+    $ tar -xzf bitchx-<tag>-linux-<arch>.tar.gz
+    $ chmod +x bitchx
+    $ sudo mv bitchx /usr/local/bin/bitchx
+
+Windows PowerShell example:
+
+    PS> Expand-Archive .\bitchx-<tag>-windows-<arch>.zip -DestinationPath .
+    PS> Move-Item .\bitchx.exe "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\bitchx.exe"
+
 
 Running BitchX-rs
 =================

@@ -1,0 +1,87 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            archive_extension: tar.gz
+          - os: macos-latest
+            platform: macos
+            archive_extension: tar.gz
+          - os: windows-latest
+            platform: windows
+            archive_extension: zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release binary
+        run: cargo build --release --locked --bin bitchx
+
+      - name: Package artifact (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          archive_name="bitchx-${GITHUB_REF_NAME}-${{ matrix.platform }}-${RUNNER_ARCH}.${{ matrix.archive_extension }}"
+          mkdir -p dist
+          cp target/release/bitchx dist/bitchx
+          tar -C dist -czf "${archive_name}" bitchx
+          echo "ARCHIVE_NAME=${archive_name}" >> "${GITHUB_ENV}"
+
+      - name: Package artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archiveName = "bitchx-$env:GITHUB_REF_NAME-${{ matrix.platform }}-$env:RUNNER_ARCH.${{ matrix.archive_extension }}"
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Copy-Item target\release\bitchx.exe dist\bitchx.exe -Force
+          Compress-Archive -Path dist\bitchx.exe -DestinationPath $archiveName -Force
+          "ARCHIVE_NAME=$archiveName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload packaged artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE_NAME }}
+          path: ${{ env.ARCHIVE_NAME }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create or update release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
