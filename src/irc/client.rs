@@ -73,7 +73,7 @@ impl IrcClient {
         let host = &server_config.host;
         let port = server_config.port;
 
-        let conn = match IrcConnection::connect(host, port, server_config.tls, true).await {
+        let conn = match IrcConnection::connect(host, port, server_config.tls, config.tls.verify_certs).await {
             Ok(c) => c,
             Err(e) => {
                 let _ = self.event_tx.send(IrcEvent::Error(format!(
