@@ -49,6 +49,11 @@ To verify formatting:
 Installing BitchX-rs
 ====================
 
+You can install BitchX-rs in multiple ways.
+
+Method 1: Prebuilt release binaries (recommended)
+-------------------------------------------------
+
 Prebuilt binaries are published on every version tag (`v*`) in GitHub Releases.
 
 1. Open the latest release:
@@ -72,6 +77,27 @@ Windows PowerShell example:
 
     PS> Expand-Archive .\bitchx-<tag>-windows-<arch>.zip -DestinationPath .
     PS> Move-Item .\bitchx.exe "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\bitchx.exe"
+
+Method 2: Install directly with Cargo from Git
+-----------------------------------------------
+
+This method installs the latest code from the default branch:
+
+    $ cargo install --git https://github.com/heyAyushh/bitchx-rs bitchx
+
+To install from a specific tag:
+
+    $ cargo install --git https://github.com/heyAyushh/bitchx-rs --tag <tag> bitchx
+
+Method 3: Build from source
+---------------------------
+
+Clone and build manually:
+
+    $ git clone https://github.com/heyAyushh/bitchx-rs.git
+    $ cd bitchx-rs
+    $ cargo build --release
+    $ ./target/release/bitchx --help
 
 
 Running BitchX-rs
