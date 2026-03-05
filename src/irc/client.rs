@@ -73,7 +73,7 @@ impl IrcClient {
         let host = &server_config.host;
         let port = server_config.port;
 
-        let conn = match IrcConnection::connect(host, port, server_config.tls, true).await {
+        let conn = match IrcConnection::connect(host, port, server_config.tls, &config.tls).await {
             Ok(c) => c,
             Err(e) => {
                 let _ = self.event_tx.send(IrcEvent::Error(format!(
@@ -87,18 +87,29 @@ impl IrcClient {
 
         let (mut reader, mut writer) = conn.split();
         let mut current_nick = config.nick.clone();
+        let mut alt_nick_idx = 0usize;
+
+        let has_sasl = server_config.sasl_user.is_some() && server_config.sasl_pass.is_some();
+        let mut cap_ended = false;
+        let mut sasl_authenticating = false;
 
         if let Some(ref pass) = server_config.password {
             let _ = writer.send(&IrcCommand::pass(pass)).await;
         }
 
-        let cap_req = IrcCommand::cap_req(&["multi-prefix"]);
-        let _ = writer.send(&cap_req).await;
+        if has_sasl {
+            let _ = writer.send(&IrcCommand::cap_req(&["multi-prefix", "sasl"])).await;
+        } else {
+            let _ = writer.send(&IrcCommand::cap_req(&["multi-prefix"])).await;
+        }
         let _ = writer.send(&IrcCommand::nick(&current_nick)).await;
         let _ = writer
             .send(&IrcCommand::user(&config.username, &config.realname))
             .await;
-        let _ = writer.send(&IrcCommand::cap_end()).await;
+        if !has_sasl {
+            let _ = writer.send(&IrcCommand::cap_end()).await;
+            cap_ended = true;
+        }
 
         loop {
             tokio::select! {
@@ -114,8 +125,58 @@ impl IrcClient {
                                     }
 
                                     if msg.command == "433" || msg.command == "436" {
-                                        current_nick.push('_');
+                                        if alt_nick_idx < config.alt_nicks.len() {
+                                            current_nick = config.alt_nicks[alt_nick_idx].clone();
+                                            alt_nick_idx += 1;
+                                        } else {
+                                            current_nick.push('_');
+                                        }
                                         let _ = writer.send(&IrcCommand::nick(&current_nick)).await;
+                                    }
+
+                                    if msg.command == "CAP" {
+                                        let sub = msg.params.get(1).map(|s| s.as_str()).unwrap_or("");
+                                        if sub == "ACK" {
+                                            let acked = msg.trailing().unwrap_or("");
+                                            if has_sasl && acked.split_whitespace().any(|c| c == "sasl") {
+                                                let _ = writer.send("AUTHENTICATE PLAIN\r\n").await;
+                                                sasl_authenticating = true;
+                                            } else if !cap_ended {
+                                                let _ = writer.send(&IrcCommand::cap_end()).await;
+                                                cap_ended = true;
+                                            }
+                                        } else if sub == "NAK" && !cap_ended {
+                                            let _ = writer.send(&IrcCommand::cap_end()).await;
+                                            cap_ended = true;
+                                        }
+                                    }
+
+                                    if msg.command == "AUTHENTICATE" && sasl_authenticating {
+                                        if msg.params.first().map_or(false, |p| p == "+") {
+                                            let user = server_config.sasl_user.as_deref().unwrap_or("");
+                                            let pass = server_config.sasl_pass.as_deref().unwrap_or("");
+                                            let payload = format!("\0{user}\0{pass}");
+                                            use base64::Engine as _;
+                                            let encoded = base64::engine::general_purpose::STANDARD
+                                                .encode(payload.as_bytes());
+                                            let _ = writer.send(&format!("AUTHENTICATE {encoded}\r\n")).await;
+                                            sasl_authenticating = false;
+                                        }
+                                    }
+
+                                    // 903 = RPL_SASLSUCCESS
+                                    if msg.command == "903" && !cap_ended {
+                                        let _ = writer.send(&IrcCommand::cap_end()).await;
+                                        cap_ended = true;
+                                    }
+
+                                    // 904/905 = ERR_SASLFAIL / ERR_SASLALREADY
+                                    if (msg.command == "904" || msg.command == "905") && !cap_ended {
+                                        let _ = self.event_tx.send(IrcEvent::Error(
+                                            "SASL authentication failed".into(),
+                                        ));
+                                        let _ = writer.send(&IrcCommand::cap_end()).await;
+                                        cap_ended = true;
                                     }
 
                                     let _ = self.event_tx.send(IrcEvent::Message(msg));

@@ -39,6 +39,7 @@ pub struct Channel {
     pub modes: HashSet<char>,
     pub messages: Vec<ChatMessage>,
     pub unread_count: usize,
+    pub max_messages: usize,
 }
 
 impl Channel {
@@ -50,11 +51,15 @@ impl Channel {
             modes: HashSet::new(),
             messages: Vec::new(),
             unread_count: 0,
+            max_messages: 0,
         }
     }
 
     pub fn add_message(&mut self, msg: ChatMessage) {
         self.messages.push(msg);
+        if self.max_messages > 0 && self.messages.len() > self.max_messages {
+            self.messages.drain(..self.messages.len() - self.max_messages);
+        }
     }
 
     pub fn sorted_users(&self) -> Vec<&ChannelUser> {

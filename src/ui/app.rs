@@ -711,8 +711,9 @@ impl App {
 
     fn ensure_channel(&mut self, name: &str) {
         if !self.channels.contains_key(name) {
-            self.channels
-                .insert(name.to_string(), Channel::new(name.to_string()));
+            let mut ch = Channel::new(name.to_string());
+            ch.max_messages = self.config.ui.scrollback_lines;
+            self.channels.insert(name.to_string(), ch);
         }
     }
 
@@ -723,6 +724,10 @@ impl App {
             content: content.to_string(),
             kind,
         });
+        let max = self.config.ui.scrollback_lines;
+        if max > 0 && self.server_messages.len() > max {
+            self.server_messages.drain(..self.server_messages.len() - max);
+        }
     }
 
     fn switch_channel(&mut self, direction: i32) {
