@@ -58,7 +58,8 @@ impl Channel {
     pub fn add_message(&mut self, msg: ChatMessage) {
         self.messages.push(msg);
         if self.max_messages > 0 && self.messages.len() > self.max_messages {
-            self.messages.drain(..self.messages.len() - self.max_messages);
+            self.messages
+                .drain(..self.messages.len() - self.max_messages);
         }
     }
 

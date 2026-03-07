@@ -98,7 +98,9 @@ impl IrcClient {
         }
 
         if has_sasl {
-            let _ = writer.send(&IrcCommand::cap_req(&["multi-prefix", "sasl"])).await;
+            let _ = writer
+                .send(&IrcCommand::cap_req(&["multi-prefix", "sasl"]))
+                .await;
         } else {
             let _ = writer.send(&IrcCommand::cap_req(&["multi-prefix"])).await;
         }
@@ -151,17 +153,18 @@ impl IrcClient {
                                         }
                                     }
 
-                                    if msg.command == "AUTHENTICATE" && sasl_authenticating {
-                                        if msg.params.first().map_or(false, |p| p == "+") {
-                                            let user = server_config.sasl_user.as_deref().unwrap_or("");
-                                            let pass = server_config.sasl_pass.as_deref().unwrap_or("");
-                                            let payload = format!("\0{user}\0{pass}");
-                                            use base64::Engine as _;
-                                            let encoded = base64::engine::general_purpose::STANDARD
-                                                .encode(payload.as_bytes());
-                                            let _ = writer.send(&format!("AUTHENTICATE {encoded}\r\n")).await;
-                                            sasl_authenticating = false;
-                                        }
+                                    if msg.command == "AUTHENTICATE"
+                                        && sasl_authenticating
+                                        && msg.params.first().is_some_and(|p| p == "+")
+                                    {
+                                        let user = server_config.sasl_user.as_deref().unwrap_or("");
+                                        let pass = server_config.sasl_pass.as_deref().unwrap_or("");
+                                        let payload = format!("\0{user}\0{pass}");
+                                        use base64::Engine as _;
+                                        let encoded = base64::engine::general_purpose::STANDARD
+                                            .encode(payload.as_bytes());
+                                        let _ = writer.send(&format!("AUTHENTICATE {encoded}\r\n")).await;
+                                        sasl_authenticating = false;
                                     }
 
                                     // 903 = RPL_SASLSUCCESS

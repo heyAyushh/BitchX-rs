@@ -720,7 +720,8 @@ impl App {
         });
         let max = self.config.ui.scrollback_lines;
         if max > 0 && self.server_messages.len() > max {
-            self.server_messages.drain(..self.server_messages.len() - max);
+            self.server_messages
+                .drain(..self.server_messages.len() - max);
         }
     }
 
