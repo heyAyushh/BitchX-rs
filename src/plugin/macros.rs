@@ -60,15 +60,9 @@ macro_rules! declare_bitchx_plugin {
         ) -> *const c_char {
             // SAFETY: The host (PluginManager) guarantees that sender, target,
             // and message are valid, non-null, null-terminated C strings.
-            let sender = unsafe { CStr::from_ptr(sender) }
-                .to_str()
-                .unwrap_or("");
-            let target = unsafe { CStr::from_ptr(target) }
-                .to_str()
-                .unwrap_or("");
-            let message = unsafe { CStr::from_ptr(message) }
-                .to_str()
-                .unwrap_or("");
+            let sender = unsafe { CStr::from_ptr(sender) }.to_str().unwrap_or("");
+            let target = unsafe { CStr::from_ptr(target) }.to_str().unwrap_or("");
+            let message = unsafe { CStr::from_ptr(message) }.to_str().unwrap_or("");
 
             let handler: fn(&str, &str, &str) -> Option<String> = $on_message;
             match handler(sender, target, message) {

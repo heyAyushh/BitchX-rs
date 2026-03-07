@@ -16,7 +16,7 @@ impl<'a> NickListWidget<'a> {
 
     fn user_style(user: &ChannelUser) -> Style {
         match user.prefix {
-            Some('@') => Theme::nick_op(),
+            Some('~' | '&' | '@' | '%') => Theme::nick_op(),
             Some('+') => Theme::nick_voice(),
             _ => Theme::nick_normal(),
         }

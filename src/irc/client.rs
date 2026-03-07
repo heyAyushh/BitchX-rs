@@ -88,6 +88,7 @@ impl IrcClient {
         let (mut reader, mut writer) = conn.split();
         let mut current_nick = config.nick.clone();
         let mut alt_nick_idx = 0usize;
+        let mut auto_joined = false;
 
         let has_sasl = server_config.sasl_user.is_some() && server_config.sasl_pass.is_some();
         let mut cap_ended = false;
@@ -98,7 +99,9 @@ impl IrcClient {
         }
 
         if has_sasl {
-            let _ = writer.send(&IrcCommand::cap_req(&["multi-prefix", "sasl"])).await;
+            let _ = writer
+                .send(&IrcCommand::cap_req(&["multi-prefix", "sasl"]))
+                .await;
         } else {
             let _ = writer.send(&IrcCommand::cap_req(&["multi-prefix"])).await;
         }
@@ -151,17 +154,18 @@ impl IrcClient {
                                         }
                                     }
 
-                                    if msg.command == "AUTHENTICATE" && sasl_authenticating {
-                                        if msg.params.first().map_or(false, |p| p == "+") {
-                                            let user = server_config.sasl_user.as_deref().unwrap_or("");
-                                            let pass = server_config.sasl_pass.as_deref().unwrap_or("");
-                                            let payload = format!("\0{user}\0{pass}");
-                                            use base64::Engine as _;
-                                            let encoded = base64::engine::general_purpose::STANDARD
-                                                .encode(payload.as_bytes());
-                                            let _ = writer.send(&format!("AUTHENTICATE {encoded}\r\n")).await;
-                                            sasl_authenticating = false;
-                                        }
+                                    if msg.command == "AUTHENTICATE"
+                                        && sasl_authenticating
+                                        && msg.params.first().is_some_and(|p| p == "+")
+                                    {
+                                        let user = server_config.sasl_user.as_deref().unwrap_or("");
+                                        let pass = server_config.sasl_pass.as_deref().unwrap_or("");
+                                        let payload = format!("\0{user}\0{pass}");
+                                        use base64::Engine as _;
+                                        let encoded = base64::engine::general_purpose::STANDARD
+                                            .encode(payload.as_bytes());
+                                        let _ = writer.send(&format!("AUTHENTICATE {encoded}\r\n")).await;
+                                        sasl_authenticating = false;
                                     }
 
                                     // 903 = RPL_SASLSUCCESS
@@ -177,6 +181,15 @@ impl IrcClient {
                                         ));
                                         let _ = writer.send(&IrcCommand::cap_end()).await;
                                         cap_ended = true;
+                                    }
+
+                                    if !auto_joined
+                                        && matches!(msg.command.as_str(), "001" | "376" | "422")
+                                    {
+                                        for channel in &config.auto_join {
+                                            let _ = writer.send(&IrcCommand::join(channel)).await;
+                                        }
+                                        auto_joined = true;
                                     }
 
                                     let _ = self.event_tx.send(IrcEvent::Message(msg));
@@ -966,6 +979,79 @@ mod tests {
         assert!(
             data.contains("JOIN :#mychan"),
             "Should send JOIN, got: {data}"
+        );
+    }
+
+    #[tokio::test]
+    async fn client_auto_joins_configured_channels_after_welcome() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let server_handle = tokio::spawn(async move {
+            let (mut sock, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 4096];
+            let mut all_data = String::new();
+            let mut sent_welcome = false;
+
+            for _ in 0..12 {
+                match tokio::time::timeout(
+                    tokio::time::Duration::from_millis(200),
+                    sock.read(&mut buf),
+                )
+                .await
+                {
+                    Ok(Ok(0)) => break,
+                    Ok(Ok(n)) => {
+                        all_data.push_str(&String::from_utf8_lossy(&buf[..n]));
+
+                        if !sent_welcome && all_data.contains("USER") {
+                            sock.write_all(b":server 001 testbot :Welcome\r\n")
+                                .await
+                                .unwrap();
+                            sent_welcome = true;
+                        }
+
+                        if all_data.contains("JOIN :#rust") && all_data.contains("JOIN :#bitchx") {
+                            break;
+                        }
+                    }
+                    _ => break,
+                }
+            }
+            sock.shutdown().await.ok();
+            all_data
+        });
+
+        let (client, cmd_tx, _event_rx) = IrcClient::new();
+        let mut config = test_config();
+        config.auto_join = vec!["#rust".into(), "#bitchx".into()];
+
+        let server_config = ServerConfig {
+            host: addr.ip().to_string(),
+            port: addr.port(),
+            tls: false,
+            password: None,
+            sasl_user: None,
+            sasl_pass: None,
+        };
+
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
+
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+        drop(cmd_tx);
+        let _ = client_handle.await;
+
+        let data = server_handle.await.unwrap();
+        assert!(
+            data.contains("JOIN :#rust"),
+            "Should auto-join #rust after welcome, got: {data}"
+        );
+        assert!(
+            data.contains("JOIN :#bitchx"),
+            "Should auto-join #bitchx after welcome, got: {data}"
         );
     }
 }
