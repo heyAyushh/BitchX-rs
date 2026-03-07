@@ -42,6 +42,36 @@ pub struct Channel {
     pub max_messages: usize,
 }
 
+pub fn prefix_rank(prefix: Option<char>) -> u8 {
+    match prefix {
+        Some('~') => 0,
+        Some('&') => 1,
+        Some('@') => 2,
+        Some('%') => 3,
+        Some('+') => 4,
+        _ => 5,
+    }
+}
+
+pub fn merge_prefix(current: Option<char>, candidate: char) -> Option<char> {
+    if prefix_rank(Some(candidate)) < prefix_rank(current) {
+        Some(candidate)
+    } else {
+        current
+    }
+}
+
+pub fn prefix_from_user_mode(mode: char) -> Option<char> {
+    match mode {
+        'q' => Some('~'),
+        'a' => Some('&'),
+        'o' => Some('@'),
+        'h' => Some('%'),
+        'v' => Some('+'),
+        _ => None,
+    }
+}
+
 impl Channel {
     pub fn new(name: String) -> Self {
         Self {
@@ -66,13 +96,8 @@ impl Channel {
     pub fn sorted_users(&self) -> Vec<&ChannelUser> {
         let mut users: Vec<&ChannelUser> = self.users.values().collect();
         users.sort_by(|a, b| {
-            let rank = |u: &&ChannelUser| match u.prefix {
-                Some('@') => 0,
-                Some('+') => 1,
-                _ => 2,
-            };
-            rank(a)
-                .cmp(&rank(b))
+            prefix_rank(a.prefix)
+                .cmp(&prefix_rank(b.prefix))
                 .then_with(|| a.nick.to_lowercase().cmp(&b.nick.to_lowercase()))
         });
         users
