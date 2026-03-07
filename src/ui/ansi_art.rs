@@ -338,21 +338,8 @@ pub const LOGO_14: &str = concat!(
 );
 
 pub const LOGOS: &[&str] = &[
-    LOGO_0,
-    LOGO_1,
-    LOGO_2,
-    LOGO_3,
-    LOGO_4,
-    LOGO_5,
-    LOGO_6,
-    LOGO_7,
-    LOGO_8,
-    LOGO_9,
-    LOGO_10,
-    LOGO_11,
-    LOGO_12,
-    LOGO_13,
-    LOGO_14,
+    LOGO_0, LOGO_1, LOGO_2, LOGO_3, LOGO_4, LOGO_5, LOGO_6, LOGO_7, LOGO_8, LOGO_9, LOGO_10,
+    LOGO_11, LOGO_12, LOGO_13, LOGO_14,
 ];
 
 pub fn print_ansi_logo() {
@@ -375,12 +362,18 @@ mod tests {
 
     #[test]
     fn all_logos_non_empty() {
-        for logo in LOGOS { assert!(!logo.is_empty()); }
+        for logo in LOGOS {
+            assert!(!logo.is_empty());
+        }
     }
 
     #[test]
-    fn print_does_not_panic() { print_ansi_logo(); }
+    fn print_does_not_panic() {
+        print_ansi_logo();
+    }
 
     #[test]
-    fn has_all_variants() { assert_eq!(LOGOS.len(), 15); }
+    fn has_all_variants() {
+        assert_eq!(LOGOS.len(), 15);
+    }
 }

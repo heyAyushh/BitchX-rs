@@ -487,10 +487,7 @@ impl App {
                         }
                     }
                 } else {
-                    self.add_server_message(
-                        "Usage: /loaddll <path>",
-                        MessageKind::Error,
-                    );
+                    self.add_server_message("Usage: /loaddll <path>", MessageKind::Error);
                 }
             }
             "UNLOADDLL" => {
@@ -510,10 +507,7 @@ impl App {
                         }
                     }
                 } else {
-                    self.add_server_message(
-                        "Usage: /unloaddll <name>",
-                        MessageKind::Error,
-                    );
+                    self.add_server_message("Usage: /unloaddll <name>", MessageKind::Error);
                 }
             }
             "LISTDLL" => {
@@ -726,7 +720,8 @@ impl App {
         });
         let max = self.config.ui.scrollback_lines;
         if max > 0 && self.server_messages.len() > max {
-            self.server_messages.drain(..self.server_messages.len() - max);
+            self.server_messages
+                .drain(..self.server_messages.len() - max);
         }
     }
 
