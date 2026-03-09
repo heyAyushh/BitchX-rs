@@ -321,6 +321,29 @@ impl App {
                     }
                 }
             }
+            // 001 = RPL_WELCOME: update nick to server-confirmed value, trigger auto-join
+            "001" => {
+                if let Some(confirmed_nick) = msg.params.first() {
+                    self.nick = confirmed_nick.clone();
+                }
+                if let Some(text) = msg.trailing() {
+                    self.add_server_message(text, MessageKind::System);
+                }
+                let channels: Vec<String> = self.config.auto_join.clone();
+                for channel in channels {
+                    let _ = self.cmd_tx.send(ClientCommand::Join(channel));
+                }
+            }
+            // 376 = RPL_ENDOFMOTD, 422 = ERR_NOMOTD: additional auto-join safety net
+            "376" | "422" => {
+                if let Some(text) = msg.trailing() {
+                    self.add_server_message(text, MessageKind::System);
+                }
+                let channels: Vec<String> = self.config.auto_join.clone();
+                for channel in channels {
+                    let _ = self.cmd_tx.send(ClientCommand::Join(channel));
+                }
+            }
             _ => {
                 if let Some(text) = msg.trailing() {
                     self.add_server_message(text, MessageKind::System);
@@ -905,6 +928,79 @@ mod tests {
                 .unwrap()
                 .prefix,
             Some('+')
+        );
+    }
+
+    #[test]
+    fn welcome_001_updates_nick_and_triggers_auto_join() {
+        let (_event_tx, event_rx) = mpsc::unbounded_channel();
+        let (cmd_tx, mut cmd_rx) = mpsc::unbounded_channel();
+
+        let mut app = App::new(
+            Config {
+                nick: "testbot".into(),
+                auto_join: vec!["#test".into()],
+                ..Config::default()
+            },
+            event_rx,
+            cmd_tx,
+        );
+
+        app.handle_irc_message(
+            IrcMessage::parse(":server 001 testbot_ :Welcome to the IRC Network").unwrap(),
+        );
+
+        assert_eq!(app.nick, "testbot_");
+
+        let cmd = cmd_rx.try_recv().expect("should have received ClientCommand");
+        assert!(
+            matches!(cmd, ClientCommand::Join(ref ch) if ch == "#test"),
+            "expected Join(#test), got {:?}",
+            cmd
+        );
+
+        assert!(
+            app.server_messages
+                .iter()
+                .any(|m| m.content.contains("Welcome to the IRC Network")),
+            "welcome message should appear in server messages"
+        );
+    }
+
+    #[test]
+    fn join_confirmation_sets_active_channel_after_nick_update() {
+        let (_event_tx, event_rx) = mpsc::unbounded_channel();
+        let (cmd_tx, _cmd_rx) = mpsc::unbounded_channel();
+
+        let mut app = App::new(
+            Config {
+                nick: "testbot".into(),
+                auto_join: vec!["#test".into()],
+                ..Config::default()
+            },
+            event_rx,
+            cmd_tx,
+        );
+
+        // Pre-populate channel as main.rs does
+        app.channels
+            .entry("#test".into())
+            .or_insert_with(|| Channel::new("#test".into()));
+
+        // 001 with collision-resolved nick
+        app.handle_irc_message(
+            IrcMessage::parse(":server 001 testbot_ :Welcome").unwrap(),
+        );
+
+        // Server confirms JOIN with the resolved nick
+        app.handle_irc_message(
+            IrcMessage::parse(":testbot_!user@host JOIN #test").unwrap(),
+        );
+
+        assert_eq!(
+            app.active_channel.as_deref(),
+            Some("#test"),
+            "active_channel should be set after JOIN confirmation with updated nick"
         );
     }
 }
