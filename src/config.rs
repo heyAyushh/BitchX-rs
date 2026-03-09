@@ -184,31 +184,31 @@ impl Default for LogConfig {
 impl Config {
     pub fn load(path: &std::path::Path) -> crate::error::Result<Self> {
         let content = std::fs::read_to_string(path).map_err(|e| {
-            crate::error::BitchXError::Config(format!("Failed to read config: {e}"))
+            crate::error::BitchYError::Config(format!("Failed to read config: {e}"))
         })?;
         toml::from_str(&content)
-            .map_err(|e| crate::error::BitchXError::Config(format!("Failed to parse config: {e}")))
+            .map_err(|e| crate::error::BitchYError::Config(format!("Failed to parse config: {e}")))
     }
 
     pub fn config_dir() -> PathBuf {
         dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("bitchx")
+            .join("bitchy")
     }
 
     pub fn default_config_path() -> PathBuf {
-        Self::config_dir().join("bitchx.toml")
+        Self::config_dir().join("bitchy.toml")
     }
 }
 
 fn default_nick() -> String {
-    whoami().unwrap_or_else(|| "BitchX".into())
+    whoami().unwrap_or_else(|| "BitchY".into())
 }
 fn default_username() -> String {
-    whoami().unwrap_or_else(|| "bitchx".into())
+    whoami().unwrap_or_else(|| "bitchy".into())
 }
 fn default_realname() -> String {
-    "BitchX 2.0.0-rs - relay (リレー) alpha".into()
+    "BitchY - unofficial Rust IRC client".into()
 }
 fn default_port() -> u16 {
     6697
@@ -252,7 +252,7 @@ mod tests {
             alt_nicks = ["mybot_", "mybot__"]
             username = "botuser"
             realname = "My Bot"
-            auto_join = ["#rust", "#bitchx"]
+            auto_join = ["#rust", "#bitchy"]
 
             [[servers]]
             host = "irc.libera.chat"
@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(config.alt_nicks, vec!["mybot_", "mybot__"]);
         assert_eq!(config.username, "botuser");
         assert_eq!(config.realname, "My Bot");
-        assert_eq!(config.auto_join, vec!["#rust", "#bitchx"]);
+        assert_eq!(config.auto_join, vec!["#rust", "#bitchy"]);
         assert_eq!(config.servers.len(), 2);
         assert_eq!(config.servers[0].host, "irc.libera.chat");
         assert_eq!(config.servers[0].port, 6697);
@@ -348,7 +348,7 @@ mod tests {
         assert_eq!(config.nick, default_nick());
         assert!(config.alt_nicks.is_empty());
         assert_eq!(config.username, default_username());
-        assert_eq!(config.realname, "BitchX 2.0.0-rs - relay (リレー) alpha");
+        assert_eq!(config.realname, "BitchY - unofficial Rust IRC client");
         assert!(config.servers.is_empty());
         assert!(config.auto_join.is_empty());
     }
@@ -413,7 +413,7 @@ mod tests {
     #[test]
     fn default_values_are_correct() {
         let config = Config::default();
-        assert_eq!(config.realname, "BitchX 2.0.0-rs - relay (リレー) alpha");
+        assert_eq!(config.realname, "BitchY - unofficial Rust IRC client");
         assert!(config.servers.is_empty());
         assert!(config.auto_join.is_empty());
 
@@ -448,13 +448,13 @@ mod tests {
     #[test]
     fn config_dir_returns_valid_path() {
         let dir = Config::config_dir();
-        assert!(dir.ends_with("bitchx"));
+        assert!(dir.ends_with("bitchy"));
     }
 
     #[test]
     fn default_config_path_ends_with_toml() {
         let path = Config::default_config_path();
-        assert!(path.ends_with("bitchx.toml"));
+        assert!(path.ends_with("bitchy.toml"));
         assert!(path.starts_with(Config::config_dir()));
     }
 
@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn config_load_from_temp_file() {
-        let dir = std::env::temp_dir().join("bitchx_test_config");
+        let dir = std::env::temp_dir().join("bitchy_test_config");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("test.toml");
         std::fs::write(&path, r#"nick = "testbot""#).unwrap();
@@ -511,7 +511,7 @@ mod tests {
 
     #[test]
     fn config_load_invalid_toml_returns_error() {
-        let dir = std::env::temp_dir().join("bitchx_test_bad_config");
+        let dir = std::env::temp_dir().join("bitchy_test_bad_config");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("bad.toml");
         std::fs::write(&path, "this is not valid toml [[[").unwrap();

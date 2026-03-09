@@ -18,10 +18,10 @@ pub struct IrcMessage {
 }
 
 impl IrcMessage {
-    pub fn parse(line: &str) -> Result<Self, crate::error::BitchXError> {
+    pub fn parse(line: &str) -> Result<Self, crate::error::BitchYError> {
         let line = line.trim_end_matches(['\r', '\n']);
         if line.is_empty() {
-            return Err(crate::error::BitchXError::Parse("empty input".into()));
+            return Err(crate::error::BitchYError::Parse("empty input".into()));
         }
 
         let mut rest = line;
@@ -29,7 +29,7 @@ impl IrcMessage {
         let prefix_str = if rest.starts_with(':') {
             let end = rest
                 .find(' ')
-                .ok_or_else(|| crate::error::BitchXError::Parse("prefix with no command".into()))?;
+                .ok_or_else(|| crate::error::BitchYError::Parse("prefix with no command".into()))?;
             let p = &rest[1..end];
             rest = &rest[end + 1..];
             Some(p)
@@ -39,7 +39,7 @@ impl IrcMessage {
 
         rest = rest.trim_start();
         if rest.is_empty() {
-            return Err(crate::error::BitchXError::Parse("no command found".into()));
+            return Err(crate::error::BitchYError::Parse("no command found".into()));
         }
 
         let mut params = Vec::new();

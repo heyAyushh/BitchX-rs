@@ -55,7 +55,7 @@ impl App {
 
         let plugin_dir = dirs::home_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join(".bitchx")
+            .join(".bitchy")
             .join("plugins");
 
         Self {

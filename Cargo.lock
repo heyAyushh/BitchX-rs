@@ -152,7 +152,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
-name = "bitchx"
+name = "bitchy"
 version = "2.0.0-rs"
 dependencies = [
  "aes-gcm",
@@ -186,11 +186,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "bitchx-plugin-greet"
+name = "bitchy-plugin-greet"
 version = "1.0.0"
 
 [[package]]
-name = "bitchx-plugin-hello"
+name = "bitchy-plugin-hello"
 version = "1.0.0"
 
 [[package]]

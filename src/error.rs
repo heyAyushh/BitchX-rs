@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum BitchXError {
+pub enum BitchYError {
     #[error("IRC protocol error: {0}")]
     Protocol(String),
 
@@ -33,4 +33,4 @@ pub enum BitchXError {
     Other(String),
 }
 
-pub type Result<T> = std::result::Result<T, BitchXError>;
+pub type Result<T> = std::result::Result<T, BitchYError>;

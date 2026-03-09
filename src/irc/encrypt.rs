@@ -8,7 +8,7 @@ use blowfish::Blowfish;
 use cbc::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
 use sha2::{Digest, Sha256};
 
-use crate::error::{BitchXError, Result};
+use crate::error::{BitchYError, Result};
 
 type BlowfishCbcEnc = cbc::Encryptor<Blowfish>;
 type BlowfishCbcDec = cbc::Decryptor<Blowfish>;
@@ -46,17 +46,17 @@ fn pkcs7_pad(data: &[u8], block_size: usize) -> Vec<u8> {
 
 fn pkcs7_unpad(data: &[u8]) -> Result<Vec<u8>> {
     if data.is_empty() {
-        return Err(BitchXError::Encryption("Empty data".into()));
+        return Err(BitchYError::Encryption("Empty data".into()));
     }
     let pad_len = *data.last().unwrap() as usize;
     if pad_len == 0 || pad_len > 8 || pad_len > data.len() {
-        return Err(BitchXError::Encryption("Invalid padding".into()));
+        return Err(BitchYError::Encryption("Invalid padding".into()));
     }
     if !data[data.len() - pad_len..]
         .iter()
         .all(|&b| b == pad_len as u8)
     {
-        return Err(BitchXError::Encryption("Invalid padding".into()));
+        return Err(BitchYError::Encryption("Invalid padding".into()));
     }
     Ok(data[..data.len() - pad_len].to_vec())
 }
@@ -66,12 +66,12 @@ pub fn blowfish_encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>> {
     let iv = [0u8; 8];
     let padded = pkcs7_pad(plaintext, 8);
     let enc = BlowfishCbcEnc::new_from_slices(key, &iv)
-        .map_err(|e| BitchXError::Encryption(format!("Blowfish init error: {e}")))?;
+        .map_err(|e| BitchYError::Encryption(format!("Blowfish init error: {e}")))?;
     let mut buf = vec![0u8; padded.len() + 8];
     buf[..padded.len()].copy_from_slice(&padded);
     let encrypted = enc
         .encrypt_padded_mut::<NoPadding>(&mut buf, padded.len())
-        .map_err(|_| BitchXError::Encryption("Blowfish encrypt error".into()))?;
+        .map_err(|_| BitchYError::Encryption("Blowfish encrypt error".into()))?;
     Ok(encrypted.to_vec())
 }
 
@@ -79,22 +79,22 @@ pub fn blowfish_decrypt(key: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>> {
     use cbc::cipher::block_padding::NoPadding;
     let iv = [0u8; 8];
     let dec = BlowfishCbcDec::new_from_slices(key, &iv)
-        .map_err(|e| BitchXError::Encryption(format!("Blowfish init error: {e}")))?;
+        .map_err(|e| BitchYError::Encryption(format!("Blowfish init error: {e}")))?;
     let mut buf = ciphertext.to_vec();
     let decrypted = dec
         .decrypt_padded_mut::<NoPadding>(&mut buf)
-        .map_err(|_| BitchXError::Encryption("Blowfish decrypt error".into()))?;
+        .map_err(|_| BitchYError::Encryption("Blowfish decrypt error".into()))?;
     pkcs7_unpad(decrypted)
 }
 
 pub fn aes_gcm_encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>> {
     let key_bytes = derive_key_32(key);
     let cipher = Aes256Gcm::new_from_slice(&key_bytes)
-        .map_err(|e| BitchXError::Encryption(format!("AES-GCM init error: {e}")))?;
+        .map_err(|e| BitchYError::Encryption(format!("AES-GCM init error: {e}")))?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
     let ciphertext = cipher
         .encrypt(&nonce, plaintext)
-        .map_err(|e| BitchXError::Encryption(format!("AES-GCM encrypt error: {e}")))?;
+        .map_err(|e| BitchYError::Encryption(format!("AES-GCM encrypt error: {e}")))?;
 
     let mut result = nonce.to_vec();
     result.extend(ciphertext);
@@ -103,17 +103,17 @@ pub fn aes_gcm_encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>> {
 
 pub fn aes_gcm_decrypt(key: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>> {
     if ciphertext.len() < 12 {
-        return Err(BitchXError::Encryption(
+        return Err(BitchYError::Encryption(
             "Ciphertext too short for AES-GCM".into(),
         ));
     }
     let key_bytes = derive_key_32(key);
     let cipher = Aes256Gcm::new_from_slice(&key_bytes)
-        .map_err(|e| BitchXError::Encryption(format!("AES-GCM init error: {e}")))?;
+        .map_err(|e| BitchYError::Encryption(format!("AES-GCM init error: {e}")))?;
     let nonce = Nonce::from_slice(&ciphertext[..12]);
     cipher
         .decrypt(nonce, &ciphertext[12..])
-        .map_err(|e| BitchXError::Encryption(format!("AES-GCM decrypt error: {e}")))
+        .map_err(|e| BitchYError::Encryption(format!("AES-GCM decrypt error: {e}")))
 }
 
 pub fn encode_for_irc(data: &[u8]) -> String {
@@ -123,7 +123,7 @@ pub fn encode_for_irc(data: &[u8]) -> String {
 pub fn decode_from_irc(data: &str) -> Result<Vec<u8>> {
     BASE64
         .decode(data)
-        .map_err(|e| BitchXError::Encryption(format!("Base64 decode error: {e}")))
+        .map_err(|e| BitchYError::Encryption(format!("Base64 decode error: {e}")))
 }
 
 impl KeyStore {

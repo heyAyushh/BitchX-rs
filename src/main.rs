@@ -2,15 +2,15 @@ use anyhow::Result;
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
-use bitchx::config::{Config, ServerConfig};
-use bitchx::irc::client::{ClientCommand, IrcClient};
-use bitchx::ui::app::App;
+use bitchy::config::{Config, ServerConfig};
+use bitchy::irc::client::{ClientCommand, IrcClient};
+use bitchy::ui::app::App;
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "bitchx",
+    name = "bitchy",
     version,
-    about = "BitchX 2.0.0-rs - irc (リレー) alpha"
+    about = "BitchY - unofficial Rust IRC client inspired by BitchX"
 )]
 struct Cli {
     /// Nickname to use
@@ -97,7 +97,7 @@ async fn main() -> Result<()> {
     config = apply_cli_overrides(config, &cli)?;
 
     if should_show_startup_banner(&cli) {
-        bitchx::ui::ansi_art::print_startup_banner();
+        bitchy::ui::ansi_art::print_startup_banner();
         println!("  Press any key to continue...");
         crossterm::terminal::enable_raw_mode()?;
         let _ = crossterm::event::read();
@@ -127,7 +127,7 @@ async fn main() -> Result<()> {
             let _ = app
                 .channels
                 .entry(channel.clone())
-                .or_insert_with(|| bitchx::irc::channel::Channel::new(channel.clone()));
+                .or_insert_with(|| bitchy::irc::channel::Channel::new(channel.clone()));
         }
 
         let result = app.run(&mut terminal).await;
@@ -236,10 +236,10 @@ const fn default_port(use_tls: bool) -> u16 {
 }
 
 async fn run_dumb_mode(
-    mut event_rx: tokio::sync::mpsc::UnboundedReceiver<bitchx::irc::client::IrcEvent>,
+    mut event_rx: tokio::sync::mpsc::UnboundedReceiver<bitchy::irc::client::IrcEvent>,
     _cmd_tx: tokio::sync::mpsc::UnboundedSender<ClientCommand>,
 ) -> Result<()> {
-    use bitchx::irc::client::IrcEvent;
+    use bitchy::irc::client::IrcEvent;
 
     tracing::info!("Running in dumb mode (non-interactive)");
 
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn cli_default_values() {
-        let cli = Cli::parse_from(["bitchx"]);
+        let cli = Cli::parse_from(["bitchy"]);
         assert!(cli.nick.is_none());
         assert!(cli.server.is_none());
         assert!(cli.channel.is_none());
@@ -419,63 +419,63 @@ mod tests {
 
     #[test]
     fn cli_with_nick_and_server() {
-        let cli = Cli::parse_from(["bitchx", "--nick", "testbot", "--server", "irc.libera.chat"]);
+        let cli = Cli::parse_from(["bitchy", "--nick", "testbot", "--server", "irc.libera.chat"]);
         assert_eq!(cli.nick.as_deref(), Some("testbot"));
         assert_eq!(cli.server.as_deref(), Some("irc.libera.chat"));
     }
 
     #[test]
     fn cli_with_channels() {
-        let cli = Cli::parse_from(["bitchx", "--channel", "#rust", "--channel", "#bitchx"]);
+        let cli = Cli::parse_from(["bitchy", "--channel", "#rust", "--channel", "#bitchy"]);
         assert_eq!(
             cli.channel.as_deref(),
-            Some(vec!["#rust".to_string(), "#bitchx".to_string()].as_slice())
+            Some(vec!["#rust".to_string(), "#bitchy".to_string()].as_slice())
         );
     }
 
     #[test]
     fn cli_dumb_mode() {
-        let cli = Cli::parse_from(["bitchx", "--dumb"]);
+        let cli = Cli::parse_from(["bitchy", "--dumb"]);
         assert!(cli.dumb);
     }
 
     #[test]
     fn cli_debug_mode() {
-        let cli = Cli::parse_from(["bitchx", "-x"]);
+        let cli = Cli::parse_from(["bitchy", "-x"]);
         assert!(cli.debug);
     }
 
     #[test]
     fn cli_no_ansi() {
-        let cli = Cli::parse_from(["bitchx", "-A"]);
+        let cli = Cli::parse_from(["bitchy", "-A"]);
         assert!(cli.no_ansi);
     }
 
     #[test]
     fn cli_port_flag() {
-        let cli = Cli::parse_from(["bitchx", "--port", "7000"]);
+        let cli = Cli::parse_from(["bitchy", "--port", "7000"]);
         assert_eq!(cli.port, Some(7000));
     }
 
     #[test]
     fn cli_no_verify() {
-        let cli = Cli::parse_from(["bitchx", "--no-verify"]);
+        let cli = Cli::parse_from(["bitchy", "--no-verify"]);
         assert!(cli.no_verify);
     }
 
     #[test]
     fn cli_config_path() {
-        let cli = Cli::parse_from(["bitchx", "-f", "/etc/bitchx.toml"]);
+        let cli = Cli::parse_from(["bitchy", "-f", "/etc/bitchy.toml"]);
         assert_eq!(
             cli.config,
-            Some(std::path::PathBuf::from("/etc/bitchx.toml"))
+            Some(std::path::PathBuf::from("/etc/bitchy.toml"))
         );
     }
 
     #[test]
     fn cli_password() {
         let cli = Cli::parse_from([
-            "bitchx",
+            "bitchy",
             "--server",
             "irc.libera.chat",
             "--password",

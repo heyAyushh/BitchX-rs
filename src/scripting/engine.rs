@@ -211,12 +211,12 @@ mod tests {
     #[test]
     fn variable_expansion() {
         let mut engine = ScriptEngine::new();
-        engine.set_var("nick", "BitchX");
+        engine.set_var("nick", "BitchY");
         engine.set_var("channel", "#rust");
         let result = engine.process("Hello $nick in $channel", None);
         assert_eq!(
             result,
-            ScriptResult::Message("Hello BitchX in #rust".into())
+            ScriptResult::Message("Hello BitchY in #rust".into())
         );
     }
 
