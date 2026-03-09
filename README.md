@@ -44,7 +44,7 @@ Installing BitchY
 You can install BitchY in three ways. The recommended method is using
 prebuilt binaries from GitHub Releases, published on every version tag (`v*`):
 
-    https://github.com/heyAyushh/BitchX-rs/releases/latest
+    https://github.com/heyAyushh/BitchY/releases/latest
 
 Download the archive that matches your platform (`bitchy-<tag>-linux-<arch>.tar.gz`,
 `bitchy-<tag>-macos-<arch>.tar.gz`, or `bitchy-<tag>-windows-<arch>.zip`), extract
@@ -63,16 +63,16 @@ Windows PowerShell example:
 
 If you prefer installing through Cargo directly from Git, use:
 
-    $ cargo install --git https://github.com/heyAyushh/bitchx-rs bitchy
+    $ cargo install --git https://github.com/heyAyushh/BitchY.git bitchy
 
 To install a specific tagged release with Cargo, use:
 
-    $ cargo install --git https://github.com/heyAyushh/bitchx-rs --tag <tag> bitchy
+    $ cargo install --git https://github.com/heyAyushh/BitchY.git --tag <tag> bitchy
 
 If you want full control, build from source:
 
-    $ git clone https://github.com/heyAyushh/bitchx-rs.git
-    $ cd bitchx-rs
+    $ git clone https://github.com/heyAyushh/BitchY.git
+    $ cd BitchY
     $ cargo build --release
     $ ./target/release/bitchy --help
 
@@ -139,7 +139,7 @@ the Rust rewrite attribution used by this repository.
 Links
 =====
 
-    https://github.com/heyAyushh/BitchX-rs       Current repository location
+    https://github.com/heyAyushh/BitchY          Current repository location
     https://www.bitchx.org/                      Original BitchX website
     https://faq.bitchx.org/                      Original FAQ
 
