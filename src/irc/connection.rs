@@ -43,23 +43,23 @@ impl IrcConnection {
                 let mut root_store = root_store();
                 if let Some(ref ca_path) = tls_config.ca_file {
                     let data = std::fs::read(ca_path)
-                        .map_err(|e| BitchXError::Tls(format!("Failed to read ca_file: {e}")))?;
+                        .map_err(|e| BitchYError::Tls(format!("Failed to read ca_file: {e}")))?;
                     let mut cursor = std::io::Cursor::new(data);
                     for cert in rustls_pemfile::certs(&mut cursor) {
                         root_store
                             .add(
                                 cert.map_err(|e| {
-                                    BitchXError::Tls(format!("Invalid CA cert: {e}"))
+                                    BitchYError::Tls(format!("Invalid CA cert: {e}"))
                                 })?,
                             )
-                            .map_err(|e| BitchXError::Tls(format!("Failed to add CA cert: {e}")))?;
+                            .map_err(|e| BitchYError::Tls(format!("Failed to add CA cert: {e}")))?;
                     }
                 }
                 let builder = rustls::ClientConfig::builder().with_root_certificates(root_store);
                 match (&tls_config.client_cert, &tls_config.client_key) {
                     (Some(cert_path), Some(key_path)) => builder
                         .with_client_auth_cert(load_certs(cert_path)?, load_key(key_path)?)
-                        .map_err(|e| BitchXError::Tls(format!("Client cert error: {e}")))?,
+                        .map_err(|e| BitchYError::Tls(format!("Client cert error: {e}")))?,
                     _ => builder.with_no_client_auth(),
                 }
             } else {
@@ -170,20 +170,20 @@ impl ConnectionWriter {
 
 fn load_certs(path: &std::path::Path) -> Result<Vec<rustls::pki_types::CertificateDer<'static>>> {
     let data = std::fs::read(path)
-        .map_err(|e| BitchXError::Tls(format!("Failed to read cert file: {e}")))?;
+        .map_err(|e| BitchYError::Tls(format!("Failed to read cert file: {e}")))?;
     let mut cursor = std::io::Cursor::new(data);
     rustls_pemfile::certs(&mut cursor)
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| BitchXError::Tls(format!("Invalid cert: {e}")))
+        .map_err(|e| BitchYError::Tls(format!("Invalid cert: {e}")))
 }
 
 fn load_key(path: &std::path::Path) -> Result<rustls::pki_types::PrivateKeyDer<'static>> {
     let data = std::fs::read(path)
-        .map_err(|e| BitchXError::Tls(format!("Failed to read key file: {e}")))?;
+        .map_err(|e| BitchYError::Tls(format!("Failed to read key file: {e}")))?;
     let mut cursor = std::io::Cursor::new(data);
     rustls_pemfile::private_key(&mut cursor)
-        .map_err(|e| BitchXError::Tls(format!("Invalid key: {e}")))?
-        .ok_or_else(|| BitchXError::Tls("No private key found in key file".into()))
+        .map_err(|e| BitchYError::Tls(format!("Invalid key: {e}")))?
+        .ok_or_else(|| BitchYError::Tls("No private key found in key file".into()))
 }
 
 fn root_store() -> rustls::RootCertStore {
