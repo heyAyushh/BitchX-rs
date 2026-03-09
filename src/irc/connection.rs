@@ -4,7 +4,7 @@ use tokio::net::TcpStream;
 use tokio_rustls::client::TlsStream;
 use tokio_rustls::TlsConnector;
 
-use crate::error::{BitchXError, Result};
+use crate::error::{BitchYError, Result};
 
 pub enum IrcStream {
     Plain(TcpStream),
@@ -46,12 +46,12 @@ impl IrcConnection {
 
             let connector = TlsConnector::from(Arc::new(config));
             let server_name = rustls::pki_types::ServerName::try_from(host.to_string())
-                .map_err(|e| BitchXError::Tls(format!("Invalid server name: {e}")))?;
+                .map_err(|e| BitchYError::Tls(format!("Invalid server name: {e}")))?;
 
             let tls_stream = connector
                 .connect(server_name, tcp)
                 .await
-                .map_err(|e| BitchXError::Tls(format!("TLS handshake failed: {e}")))?;
+                .map_err(|e| BitchYError::Tls(format!("TLS handshake failed: {e}")))?;
 
             let (read_half, write_half) = tokio::io::split(tls_stream);
             Ok(Self {

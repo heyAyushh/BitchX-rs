@@ -1,0 +1,10 @@
+BitchY is an unofficial Rust IRC client inspired by the original BitchX.
+
+Copyright (c) 1996-2004, Colten Edwards
+Copyright (c) 2026, Ayush
+
+The archived material under `bitchx-docs/` preserves historical BitchX
+documentation and naming. The active Rust implementation in `src/` and the
+workspace plugins in `plugins/` are maintained as the separate BitchY project.
+
+See `LICENSE` for the full BSD-3-Clause terms that govern this repository.

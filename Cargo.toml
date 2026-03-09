@@ -2,15 +2,15 @@
 members = [".", "plugins/hello", "plugins/greet"]
 
 [package]
-name = "bitchx"
+name = "bitchy"
 version = "2.0.0-rs"
 edition = "2021"
-description = "BitchX IRC client - irc (リレー) alpha"
+description = "BitchY - unofficial Rust IRC client inspired by BitchX"
 license = "BSD-3-Clause"
 readme = "README.md"
 
 [[bin]]
-name = "bitchx"
+name = "bitchy"
 path = "src/main.rs"
 
 [dependencies]

@@ -2,27 +2,27 @@ use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
 #[no_mangle]
-pub extern "C" fn bitchx_plugin_name() -> *const c_char {
+pub extern "C" fn bitchy_plugin_name() -> *const c_char {
     c"greet".as_ptr()
 }
 
 #[no_mangle]
-pub extern "C" fn bitchx_plugin_version() -> *const c_char {
+pub extern "C" fn bitchy_plugin_version() -> *const c_char {
     c"1.0.0".as_ptr()
 }
 
 #[no_mangle]
-pub extern "C" fn bitchx_plugin_description() -> *const c_char {
+pub extern "C" fn bitchy_plugin_description() -> *const c_char {
     c"Greets users when they join a channel".as_ptr()
 }
 
 #[no_mangle]
-pub extern "C" fn bitchx_plugin_init() -> i32 {
+pub extern "C" fn bitchy_plugin_init() -> i32 {
     0
 }
 
 #[no_mangle]
-pub extern "C" fn bitchx_plugin_cleanup() -> i32 {
+pub extern "C" fn bitchy_plugin_cleanup() -> i32 {
     0
 }
 
@@ -31,7 +31,7 @@ pub extern "C" fn bitchx_plugin_cleanup() -> i32 {
 /// `sender`, `target`, and `message` must be valid, non-null, null-terminated
 /// C strings, or null. Null `sender` or `message` returns null.
 #[no_mangle]
-pub unsafe extern "C" fn bitchx_plugin_on_message(
+pub unsafe extern "C" fn bitchy_plugin_on_message(
     sender: *const c_char,
     _target: *const c_char,
     message: *const c_char,
@@ -71,36 +71,36 @@ mod tests {
 
     #[test]
     fn test_plugin_name() {
-        let name = bitchx_plugin_name();
-        // SAFETY: `bitchx_plugin_name` returns a pointer to a static C string literal.
+        let name = bitchy_plugin_name();
+        // SAFETY: `bitchy_plugin_name` returns a pointer to a static C string literal.
         let name_str = unsafe { CStr::from_ptr(name) }.to_str().unwrap();
         assert_eq!(name_str, "greet");
     }
 
     #[test]
     fn test_plugin_version() {
-        let version = bitchx_plugin_version();
-        // SAFETY: `bitchx_plugin_version` returns a pointer to a static C string literal.
+        let version = bitchy_plugin_version();
+        // SAFETY: `bitchy_plugin_version` returns a pointer to a static C string literal.
         let version_str = unsafe { CStr::from_ptr(version) }.to_str().unwrap();
         assert_eq!(version_str, "1.0.0");
     }
 
     #[test]
     fn test_plugin_description() {
-        let desc = bitchx_plugin_description();
-        // SAFETY: `bitchx_plugin_description` returns a pointer to a static C string literal.
+        let desc = bitchy_plugin_description();
+        // SAFETY: `bitchy_plugin_description` returns a pointer to a static C string literal.
         let desc_str = unsafe { CStr::from_ptr(desc) }.to_str().unwrap();
         assert_eq!(desc_str, "Greets users when they join a channel");
     }
 
     #[test]
     fn test_plugin_init() {
-        assert_eq!(bitchx_plugin_init(), 0);
+        assert_eq!(bitchy_plugin_init(), 0);
     }
 
     #[test]
     fn test_plugin_cleanup() {
-        assert_eq!(bitchx_plugin_cleanup(), 0);
+        assert_eq!(bitchy_plugin_cleanup(), 0);
     }
 
     #[test]
@@ -110,7 +110,7 @@ mod tests {
         let msg = CString::new("newuser has joined #general").unwrap();
         // SAFETY: All pointers are valid CStrings produced above.
         let result =
-            unsafe { bitchx_plugin_on_message(sender.as_ptr(), target.as_ptr(), msg.as_ptr()) };
+            unsafe { bitchy_plugin_on_message(sender.as_ptr(), target.as_ptr(), msg.as_ptr()) };
         assert!(!result.is_null());
         // SAFETY: Non-null result is a heap-allocated CString per the plugin contract.
         let response = unsafe { CStr::from_ptr(result) }.to_str().unwrap();
@@ -128,7 +128,7 @@ mod tests {
         let msg = CString::new("hello everyone").unwrap();
         // SAFETY: All pointers are valid CStrings produced above.
         let result =
-            unsafe { bitchx_plugin_on_message(sender.as_ptr(), target.as_ptr(), msg.as_ptr()) };
+            unsafe { bitchy_plugin_on_message(sender.as_ptr(), target.as_ptr(), msg.as_ptr()) };
         assert!(result.is_null());
     }
 
@@ -138,7 +138,7 @@ mod tests {
         let target = CString::new("#test").unwrap();
         // SAFETY: Null message is explicitly handled by returning null.
         let result =
-            unsafe { bitchx_plugin_on_message(sender.as_ptr(), target.as_ptr(), std::ptr::null()) };
+            unsafe { bitchy_plugin_on_message(sender.as_ptr(), target.as_ptr(), std::ptr::null()) };
         assert!(result.is_null());
     }
 
@@ -148,7 +148,7 @@ mod tests {
         let msg = CString::new("someone has joined").unwrap();
         // SAFETY: Null sender is explicitly handled by returning null.
         let result =
-            unsafe { bitchx_plugin_on_message(std::ptr::null(), target.as_ptr(), msg.as_ptr()) };
+            unsafe { bitchy_plugin_on_message(std::ptr::null(), target.as_ptr(), msg.as_ptr()) };
         assert!(result.is_null());
     }
 }

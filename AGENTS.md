@@ -2,7 +2,7 @@
 
 ## Project overview
 
-BitchX is a terminal-based IRC (Internet Relay Chat) client. This repository now tracks the Rust rewrite.
+BitchY is a terminal-based IRC (Internet Relay Chat) client inspired by the original BitchX. This repository now tracks the Rust rewrite.
 
 ## Cursor Cloud specific instructions
 
@@ -34,7 +34,7 @@ When the Rust rewrite is underway:
 
 ### Rust module structure
 
-The Rust rewrite lives under `src/`. Modules: `irc/` (connection, protocol, commands), `ui/` (TUI app, widgets, input), `plugin/` (C ABI plugin loader + macro helper), `scripting/` (alias engine), and `config`. The plugin system uses `libloading` for dynamic `.so` loading with a C ABI contract (`bitchx_plugin_*` symbols). Plugin commands: `/loaddll`, `/unloaddll`, `/listdll`.
+The Rust rewrite lives under `src/`. Modules: `irc/` (connection, protocol, commands), `ui/` (TUI app, widgets, input), `plugin/` (C ABI plugin loader + macro helper), `scripting/` (alias engine), and `config`. The plugin system uses `libloading` for dynamic `.so` loading with a C ABI contract (`bitchy_plugin_*` symbols). Plugin commands: `/loaddll`, `/unloaddll`, `/listdll`.
 
 ### Crypto crate API notes
 
@@ -44,7 +44,7 @@ The Rust rewrite lives under `src/`. Modules: `irc/` (connection, protocol, comm
 
 ### Workspace and plugin crates
 
-The root `Cargo.toml` defines a workspace with members `"."`, `"plugins/hello"`, and `"plugins/greet"`. Plugin crates are `cdylib` and produce `.so` files in `target/debug/`. Use `cargo build --workspace` and `cargo test --workspace` to include them. Clippy/fmt on the plugin crates: `cargo clippy -p bitchx-plugin-hello -p bitchx-plugin-greet` and `cargo fmt --check -p bitchx-plugin-hello -p bitchx-plugin-greet`. Note: `cargo clippy --workspace` may report pre-existing issues in the main `bitchx` crate; use `-p` to check individual crates.
+The root `Cargo.toml` defines a workspace with members `"."`, `"plugins/hello"`, and `"plugins/greet"`. Plugin crates are `cdylib` and produce `.so` files in `target/debug/`. Use `cargo build --workspace` and `cargo test --workspace` to include them. Clippy/fmt on the plugin crates: `cargo clippy -p bitchy-plugin-hello -p bitchy-plugin-greet` and `cargo fmt --check -p bitchy-plugin-hello -p bitchy-plugin-greet`. Note: `cargo clippy --workspace` may report pre-existing issues in the main `bitchy` crate; use `-p` to check individual crates.
 
 ### Testing caveats
 
@@ -57,7 +57,7 @@ The root `Cargo.toml` defines a workspace with members `"."`, `"plugins/hello"`,
 | Directory | Purpose |
 |-----------|---------|
 | `src/` | Rust source code (IRC core, UI, plugin loader, scripting) |
-| `bitchx-docs/` | Help documentation |
+| `bitchx-docs/` | Archived original BitchX help documentation |
 | `.cursor/rules/` | Cursor AI rules (Rust, C, clean-code, etc.) |
 | `plugins/hello/` | Example "hello" plugin crate (`cdylib`) |
 | `plugins/greet/` | Example "greet" plugin crate (`cdylib`) |

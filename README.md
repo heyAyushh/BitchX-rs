@@ -1,35 +1,26 @@
-BitchX 2.0.0-rs
-===========================================================
+BitchY
+======
 
-BitchX is an IRC (Internet Relay Chat) client originally written by Colten
-Edwards aka panasync@efnet. BitchX was originally based on ircII 2.8, and
-later on the ircii-EPIC4 releases by Jeremy Nelson. It gained a following for
-its speed, built-in scripting, DCC support, and the raw personality of its
-interface. Development of the original C client wound down in the mid-2000s,
-leaving a piece of IRC history dormant.
+BitchY is an unofficial Rust IRC client inspired by the original BitchX.
+It is a separate project with its own name, binary, config paths, and plugin
+ABI. It is not affiliated with or endorsed by Colten Edwards, the original
+BitchX project, or the BitchX 2 effort.
 
-Now in 2026, BitchX is being brought back -- from scratch, in Rust.
-
-I am Ayush, and I am taking an ambitious shot at rewriting BitchX completely
-in Rust. The original client meant a lot to a generation of IRC users, and it
-deserves to live again with modern TLS, a proper terminal UI, a safe and
-testable codebase, and a plugin system that does not require patching C at
-compile time. This is not a port -- it is a ground-up rewrite that preserves
-the spirit of BitchX: fast, direct, scriptable, and unapologetic. I want to
-bring this client back to the people who remember it and introduce it to
-those who never had the chance.
+This repository also includes archival documentation from the historical
+BitchX project under `bitchx-docs/`. Those files intentionally keep their
+original names and wording.
 
 
-Building BitchX-rs
-==================
+Building BitchY
+===============
 
-BitchX 2.0.0-rs is built with Cargo, the Rust package manager. You will need
-Rust 1.75 or later, cmake, and a C compiler (required by the TLS dependency
-at build time).
+BitchY is built with Cargo, the Rust package manager. You will need Rust
+1.75 or later, cmake, and a C compiler (required by the TLS dependency at
+build time).
 
     $ cargo build --release
 
-The compiled binary will be placed at target/release/bitchx. To build and
+The compiled binary will be placed at `target/release/bitchy`. To build and
 run the full workspace including plugins:
 
     $ cargo build --workspace
@@ -40,96 +31,84 @@ To run the test suite:
 
 To check for lint warnings:
 
-    $ cargo clippy
+    $ cargo clippy --workspace
 
 To verify formatting:
 
     $ cargo fmt --check
 
-Installing BitchX-rs
-====================
 
-You can install BitchX-rs in multiple ways.
+Installing BitchY
+=================
 
-Method 1: Prebuilt release binaries (recommended)
--------------------------------------------------
+You can install BitchY in three ways. The recommended method is using
+prebuilt binaries from GitHub Releases, published on every version tag (`v*`):
 
-Prebuilt binaries are published on every version tag (`v*`) in GitHub Releases.
+    https://github.com/heyAyushh/BitchX-rs/releases/latest
 
-1. Open the latest release:
-
-       https://github.com/heyAyushh/BitchX-rs/releases/latest
-
-2. Download the archive for your platform:
-   - Linux: `bitchx-<tag>-linux-<arch>.tar.gz`
-   - macOS: `bitchx-<tag>-macos-<arch>.tar.gz`
-   - Windows: `bitchx-<tag>-windows-<arch>.zip`
-
-3. Extract and place the binary in your `PATH`.
+Download the archive that matches your platform (`bitchy-<tag>-linux-<arch>.tar.gz`,
+`bitchy-<tag>-macos-<arch>.tar.gz`, or `bitchy-<tag>-windows-<arch>.zip`), extract
+it, and place the binary in your `PATH`.
 
 Linux/macOS example:
 
-    $ tar -xzf bitchx-<tag>-linux-<arch>.tar.gz
-    $ chmod +x bitchx
-    $ sudo mv bitchx /usr/local/bin/bitchx
+    $ tar -xzf bitchy-<tag>-linux-<arch>.tar.gz
+    $ chmod +x bitchy
+    $ sudo mv bitchy /usr/local/bin/bitchy
 
 Windows PowerShell example:
 
-    PS> Expand-Archive .\bitchx-<tag>-windows-<arch>.zip -DestinationPath .
-    PS> Move-Item .\bitchx.exe "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\bitchx.exe"
+    PS> Expand-Archive .\bitchy-<tag>-windows-<arch>.zip -DestinationPath .
+    PS> Move-Item .\bitchy.exe "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\bitchy.exe"
 
-Method 2: Install directly with Cargo from Git
------------------------------------------------
+If you prefer installing through Cargo directly from Git, use:
 
-This method installs the latest code from the default branch:
+    $ cargo install --git https://github.com/heyAyushh/bitchx-rs bitchy
 
-    $ cargo install --git https://github.com/heyAyushh/bitchx-rs bitchx
+To install a specific tagged release with Cargo, use:
 
-To install from a specific tag:
+    $ cargo install --git https://github.com/heyAyushh/bitchx-rs --tag <tag> bitchy
 
-    $ cargo install --git https://github.com/heyAyushh/bitchx-rs --tag <tag> bitchx
-
-Method 3: Build from source
----------------------------
-
-Clone and build manually:
+If you want full control, build from source:
 
     $ git clone https://github.com/heyAyushh/bitchx-rs.git
     $ cd bitchx-rs
     $ cargo build --release
-    $ ./target/release/bitchx --help
+    $ ./target/release/bitchy --help
 
 
-Running BitchX-rs
-=================
+Running BitchY
+==============
 
-    $ bitchx --nick <yournick> --server <host[:port]>
+    $ bitchy --nick <yournick> --server <host[:port]>
 
-By default BitchX connects over TLS on port 6697. To connect without TLS:
+By default BitchY connects over TLS on port 6697. To connect without TLS:
 
-    $ bitchx --nick <yournick> --server <host> --no-tls
+    $ bitchy --nick <yournick> --server <host> --no-tls
 
-A configuration file can be placed at ~/.config/bitchx/bitchx.toml. Run
-with --help for the full list of options.
+A configuration file can be placed at `~/.config/bitchy/bitchy.toml`. Run
+with `--help` for the full list of options.
 
 
 Plugins
 =======
 
-BitchX-rs ships with a plugin system using a C ABI contract. Plugins are
-shared libraries (.so files) loaded at runtime with /loaddll, unloaded with
-/unloaddll, and listed with /listdll. Two example plugins, hello and greet,
-are included in the plugins/ directory and built as part of the workspace.
+BitchY ships with a plugin system using a C ABI contract. Plugins are shared
+libraries (`.so` files) loaded at runtime with `/loaddll`, unloaded with
+`/unloaddll`, and listed with `/listdll`. Two example plugins, `hello` and
+`greet`, are included in the `plugins/` directory and built as part of the
+workspace.
 
-To write a plugin, implement the bitchx_plugin_init, bitchx_plugin_on_command,
-and bitchx_plugin_destroy symbols as a cdylib crate. See plugins/hello/ for a
-minimal example.
+To write a plugin, implement the `bitchy_plugin_name`,
+`bitchy_plugin_version`, `bitchy_plugin_description`, `bitchy_plugin_init`,
+`bitchy_plugin_cleanup`, and optional `bitchy_plugin_on_message` symbols as a
+`cdylib` crate. See `plugins/hello/` for a minimal example.
 
 
 Workspace Layout
 ================
 
-The codebase is organized as a Cargo workspace. The main bitchx crate lives
+The codebase is organized as a Cargo workspace. The main `bitchy` crate lives
 at the root and is structured as follows:
 
     src/irc/        IRC connection, protocol, commands, channels, users,
@@ -144,25 +123,28 @@ at the root and is structured as follows:
     plugins/greet/  Example greet plugin crate.
 
 The intent going forward is to break these into separate published crates
-(bitchx-irc, bitchx-tui, bitchx-plugin-api, bitchx-scripting, bitchx-config)
-so that parts of the BitchX stack can be reused independently.
+(`bitchy-irc`, `bitchy-tui`, `bitchy-plugin-api`, `bitchy-scripting`,
+`bitchy-config`) so that parts of the BitchY stack can be reused
+independently.
+
+
+Licensing
+=========
+
+This repository is distributed under the BSD-3-Clause license. The full text
+is in `LICENSE`, and `COPYRIGHT` records the original BitchX attribution and
+the Rust rewrite attribution used by this repository.
 
 
 Links
 =====
 
-    https://github.com/heyAyushh/BitchX-rs       Source repository
-    https://www.bitchx.org/                        Original BitchX website
-    https://faq.bitchx.org/                        Original FAQ
+    https://github.com/heyAyushh/BitchX-rs       Current repository location
+    https://www.bitchx.org/                      Original BitchX website
+    https://faq.bitchx.org/                      Original FAQ
 
 
 Contacts
 ========
 
-    Maintainer: Ayush <heyayushh@gmail.com>
-
---
-Last Updated:
-Ayush
-heyayushh@gmail.com
-February 2026
+    Maintainer: Ayush

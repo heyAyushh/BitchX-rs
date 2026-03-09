@@ -34,7 +34,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build release binary
-        run: cargo build --release --locked --bin bitchx
+        run: cargo build --release --locked --bin bitchy
 
       - name: Package artifact (Unix)
         if: runner.os != 'Windows'
@@ -42,20 +42,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          archive_name="bitchx-${GITHUB_REF_NAME}-${{ matrix.platform }}-${RUNNER_ARCH}.${{ matrix.archive_extension }}"
+          archive_name="bitchy-${GITHUB_REF_NAME}-${{ matrix.platform }}-${RUNNER_ARCH}.${{ matrix.archive_extension }}"
           mkdir -p dist
-          cp target/release/bitchx dist/bitchx
-          tar -C dist -czf "${archive_name}" bitchx
+          cp target/release/bitchy dist/bitchy
+          tar -C dist -czf "${archive_name}" bitchy
           echo "ARCHIVE_NAME=${archive_name}" >> "${GITHUB_ENV}"
 
       - name: Package artifact (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $archiveName = "bitchx-$env:GITHUB_REF_NAME-${{ matrix.platform }}-$env:RUNNER_ARCH.${{ matrix.archive_extension }}"
+          $archiveName = "bitchy-$env:GITHUB_REF_NAME-${{ matrix.platform }}-$env:RUNNER_ARCH.${{ matrix.archive_extension }}"
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          Copy-Item target\release\bitchx.exe dist\bitchx.exe -Force
-          Compress-Archive -Path dist\bitchx.exe -DestinationPath $archiveName -Force
+          Copy-Item target\release\bitchy.exe dist\bitchy.exe -Force
+          Compress-Archive -Path dist\bitchy.exe -DestinationPath $archiveName -Force
           "ARCHIVE_NAME=$archiveName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload packaged artifact

@@ -4,7 +4,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::path::{Path, PathBuf};
 
-use crate::error::{BitchXError, Result};
+use crate::error::{BitchYError, Result};
 
 type NameFn = unsafe extern "C" fn() -> *const c_char;
 type VersionFn = unsafe extern "C" fn() -> *const c_char;
@@ -39,34 +39,34 @@ impl PluginManager {
 
     /// Load a plugin from a `.so` file.
     ///
-    /// The shared library must export the BitchX C ABI symbols:
-    /// `bitchx_plugin_name`, `bitchx_plugin_version`, `bitchx_plugin_description`,
-    /// `bitchx_plugin_init`, and `bitchx_plugin_cleanup`.
+    /// The shared library must export the BitchY C ABI symbols:
+    /// `bitchy_plugin_name`, `bitchy_plugin_version`, `bitchy_plugin_description`,
+    /// `bitchy_plugin_init`, and `bitchy_plugin_cleanup`.
     pub fn load(&mut self, path: &Path) -> Result<String> {
         if !path.exists() {
-            return Err(BitchXError::Plugin(format!(
+            return Err(BitchYError::Plugin(format!(
                 "Plugin file not found: {}",
                 path.display()
             )));
         }
 
         // SAFETY: We are loading a shared library from a user-specified path.
-        // The caller is responsible for ensuring the .so file is a valid BitchX
+        // The caller is responsible for ensuring the .so file is a valid BitchY
         // plugin compiled against a compatible ABI. The library must remain loaded
         // for the lifetime of the LoadedPlugin entry.
         let library = unsafe {
             Library::new(path).map_err(|e| {
-                BitchXError::Plugin(format!("Failed to load library {}: {e}", path.display()))
+                BitchYError::Plugin(format!("Failed to load library {}: {e}", path.display()))
             })?
         };
 
         let name = {
-            // SAFETY: The symbol `bitchx_plugin_name` is required to return a
+            // SAFETY: The symbol `bitchy_plugin_name` is required to return a
             // pointer to a valid null-terminated C string with static lifetime.
             let func: Symbol<NameFn> = unsafe {
-                library.get(b"bitchx_plugin_name").map_err(|e| {
-                    BitchXError::Plugin(format!(
-                        "Plugin {} missing bitchx_plugin_name: {e}",
+                library.get(b"bitchy_plugin_name").map_err(|e| {
+                    BitchYError::Plugin(format!(
+                        "Plugin {} missing bitchy_plugin_name: {e}",
                         path.display()
                     ))
                 })?
@@ -74,7 +74,7 @@ impl PluginManager {
             // SAFETY: The returned pointer must be a valid, null-terminated C string.
             let ptr = unsafe { func() };
             if ptr.is_null() {
-                return Err(BitchXError::Plugin(format!(
+                return Err(BitchYError::Plugin(format!(
                     "Plugin {} returned null name",
                     path.display()
                 )));
@@ -84,24 +84,27 @@ impl PluginManager {
             unsafe { CStr::from_ptr(ptr) }
                 .to_str()
                 .map_err(|e| {
-                    BitchXError::Plugin(format!("Plugin {} name is not valid UTF-8: {e}", path.display()))
+                    BitchYError::Plugin(format!(
+                        "Plugin {} name is not valid UTF-8: {e}",
+                        path.display()
+                    ))
                 })?
                 .to_string()
         };
 
         let version = {
-            // SAFETY: Same contract as bitchx_plugin_name.
+            // SAFETY: Same contract as bitchy_plugin_name.
             let func: Symbol<VersionFn> = unsafe {
-                library.get(b"bitchx_plugin_version").map_err(|e| {
-                    BitchXError::Plugin(format!(
-                        "Plugin {} missing bitchx_plugin_version: {e}",
+                library.get(b"bitchy_plugin_version").map_err(|e| {
+                    BitchYError::Plugin(format!(
+                        "Plugin {} missing bitchy_plugin_version: {e}",
                         path.display()
                     ))
                 })?
             };
             let ptr = unsafe { func() };
             if ptr.is_null() {
-                return Err(BitchXError::Plugin(format!(
+                return Err(BitchYError::Plugin(format!(
                     "Plugin {} returned null version",
                     path.display()
                 )));
@@ -110,7 +113,7 @@ impl PluginManager {
             unsafe { CStr::from_ptr(ptr) }
                 .to_str()
                 .map_err(|e| {
-                    BitchXError::Plugin(format!(
+                    BitchYError::Plugin(format!(
                         "Plugin {} version is not valid UTF-8: {e}",
                         path.display()
                     ))
@@ -119,18 +122,18 @@ impl PluginManager {
         };
 
         let description = {
-            // SAFETY: Same contract as bitchx_plugin_name.
+            // SAFETY: Same contract as bitchy_plugin_name.
             let func: Symbol<DescriptionFn> = unsafe {
-                library.get(b"bitchx_plugin_description").map_err(|e| {
-                    BitchXError::Plugin(format!(
-                        "Plugin {} missing bitchx_plugin_description: {e}",
+                library.get(b"bitchy_plugin_description").map_err(|e| {
+                    BitchYError::Plugin(format!(
+                        "Plugin {} missing bitchy_plugin_description: {e}",
                         path.display()
                     ))
                 })?
             };
             let ptr = unsafe { func() };
             if ptr.is_null() {
-                return Err(BitchXError::Plugin(format!(
+                return Err(BitchYError::Plugin(format!(
                     "Plugin {} returned null description",
                     path.display()
                 )));
@@ -139,7 +142,7 @@ impl PluginManager {
             unsafe { CStr::from_ptr(ptr) }
                 .to_str()
                 .map_err(|e| {
-                    BitchXError::Plugin(format!(
+                    BitchYError::Plugin(format!(
                         "Plugin {} description is not valid UTF-8: {e}",
                         path.display()
                     ))
@@ -148,26 +151,26 @@ impl PluginManager {
         };
 
         if self.plugins.contains_key(&name) {
-            return Err(BitchXError::Plugin(format!(
+            return Err(BitchYError::Plugin(format!(
                 "Plugin '{}' is already loaded",
                 name
             )));
         }
 
         {
-            // SAFETY: bitchx_plugin_init is required to be safe to call once
+            // SAFETY: bitchy_plugin_init is required to be safe to call once
             // during plugin load. A return value of 0 indicates success.
             let init_fn: Symbol<InitFn> = unsafe {
-                library.get(b"bitchx_plugin_init").map_err(|e| {
-                    BitchXError::Plugin(format!(
-                        "Plugin {} missing bitchx_plugin_init: {e}",
+                library.get(b"bitchy_plugin_init").map_err(|e| {
+                    BitchYError::Plugin(format!(
+                        "Plugin {} missing bitchy_plugin_init: {e}",
                         path.display()
                     ))
                 })?
             };
             let rc = unsafe { init_fn() };
             if rc != 0 {
-                return Err(BitchXError::Plugin(format!(
+                return Err(BitchYError::Plugin(format!(
                     "Plugin '{}' init failed with code {rc}",
                     name
                 )));
@@ -190,21 +193,22 @@ impl PluginManager {
 
     /// Unload a plugin by name.
     ///
-    /// Calls `bitchx_plugin_cleanup()` before dropping the library handle.
+    /// Calls `bitchy_plugin_cleanup()` before dropping the library handle.
     pub fn unload(&mut self, name: &str) -> Result<()> {
-        let plugin = self.plugins.remove(name).ok_or_else(|| {
-            BitchXError::Plugin(format!("Plugin '{}' is not loaded", name))
-        })?;
+        let plugin = self
+            .plugins
+            .remove(name)
+            .ok_or_else(|| BitchYError::Plugin(format!("Plugin '{}' is not loaded", name)))?;
 
-        // SAFETY: bitchx_plugin_cleanup is required to be safe to call once
+        // SAFETY: bitchy_plugin_cleanup is required to be safe to call once
         // during plugin unload. We call it before dropping the library.
         let cleanup_fn: std::result::Result<Symbol<CleanupFn>, _> =
-            unsafe { plugin.library.get(b"bitchx_plugin_cleanup") };
+            unsafe { plugin.library.get(b"bitchy_plugin_cleanup") };
 
         if let Ok(cleanup) = cleanup_fn {
             let rc = unsafe { cleanup() };
             if rc != 0 {
-                return Err(BitchXError::Plugin(format!(
+                return Err(BitchYError::Plugin(format!(
                     "Plugin '{}' cleanup failed with code {rc}",
                     name
                 )));
@@ -218,7 +222,12 @@ impl PluginManager {
     ///
     /// Returns a vec of `(plugin_name, response)` for any plugin that returns
     /// a non-null response string.
-    pub fn dispatch_message(&self, sender: &str, target: &str, message: &str) -> Vec<(String, String)> {
+    pub fn dispatch_message(
+        &self,
+        sender: &str,
+        target: &str,
+        message: &str,
+    ) -> Vec<(String, String)> {
         let mut responses = Vec::new();
 
         let c_sender = match CString::new(sender) {
@@ -235,16 +244,14 @@ impl PluginManager {
         };
 
         for plugin in self.plugins.values() {
-            // SAFETY: bitchx_plugin_on_message is an optional symbol. If present,
+            // SAFETY: bitchy_plugin_on_message is an optional symbol. If present,
             // the plugin contract guarantees it accepts valid C strings and returns
             // either null or a pointer to a CString allocated with CString::into_raw.
             let on_msg: std::result::Result<Symbol<OnMessageFn>, _> =
-                unsafe { plugin.library.get(b"bitchx_plugin_on_message") };
+                unsafe { plugin.library.get(b"bitchy_plugin_on_message") };
 
             if let Ok(func) = on_msg {
-                let ptr = unsafe {
-                    func(c_sender.as_ptr(), c_target.as_ptr(), c_message.as_ptr())
-                };
+                let ptr = unsafe { func(c_sender.as_ptr(), c_target.as_ptr(), c_message.as_ptr()) };
 
                 if !ptr.is_null() {
                     // SAFETY: The plugin contract says non-null returns are
@@ -311,9 +318,9 @@ mod tests {
 
     #[test]
     fn plugin_directory_accessor() {
-        let dir = PathBuf::from("/opt/bitchx/plugins");
+        let dir = PathBuf::from("/opt/bitchy/plugins");
         let pm = PluginManager::new(dir.clone());
-        assert_eq!(pm.plugin_dir(), Path::new("/opt/bitchx/plugins"));
+        assert_eq!(pm.plugin_dir(), Path::new("/opt/bitchy/plugins"));
     }
 
     #[test]
@@ -322,7 +329,7 @@ mod tests {
         let result = pm.load(Path::new("/nonexistent/plugin.so"));
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(matches!(err, BitchXError::Plugin(_)));
+        assert!(matches!(err, BitchYError::Plugin(_)));
     }
 
     #[test]
@@ -353,7 +360,7 @@ mod tests {
 
     #[test]
     fn plugin_dir_matches_constructor() {
-        let dir = PathBuf::from("/home/user/.bitchx/plugins");
+        let dir = PathBuf::from("/home/user/.bitchy/plugins");
         let pm = PluginManager::new(dir.clone());
         assert_eq!(pm.plugin_dir(), dir.as_path());
     }

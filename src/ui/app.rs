@@ -52,7 +52,7 @@ impl App {
 
         let plugin_dir = dirs::home_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join(".bitchx")
+            .join(".bitchy")
             .join("plugins");
 
         Self {
@@ -487,10 +487,7 @@ impl App {
                         }
                     }
                 } else {
-                    self.add_server_message(
-                        "Usage: /loaddll <path>",
-                        MessageKind::Error,
-                    );
+                    self.add_server_message("Usage: /loaddll <path>", MessageKind::Error);
                 }
             }
             "UNLOADDLL" => {
@@ -510,10 +507,7 @@ impl App {
                         }
                     }
                 } else {
-                    self.add_server_message(
-                        "Usage: /unloaddll <name>",
-                        MessageKind::Error,
-                    );
+                    self.add_server_message("Usage: /unloaddll <name>", MessageKind::Error);
                 }
             }
             "LISTDLL" => {

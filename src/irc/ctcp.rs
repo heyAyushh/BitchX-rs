@@ -33,7 +33,7 @@ impl CtcpMessage {
     }
 
     pub fn version_reply() -> String {
-        Self::encode("VERSION", Some("BitchX 2.0.0-rs - relay (リレー) alpha"))
+        Self::encode("VERSION", Some("BitchY - unofficial Rust IRC client"))
     }
 
     pub fn ping_reply(token: &str) -> String {
@@ -144,7 +144,7 @@ mod tests {
         assert!(reply.starts_with('\x01'));
         assert!(reply.ends_with('\x01'));
         assert!(reply.contains("VERSION"));
-        assert!(reply.contains("BitchX"));
+        assert!(reply.contains("BitchY"));
     }
 
     #[test]

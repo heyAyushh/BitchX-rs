@@ -4,7 +4,9 @@ use std::path::{Path, PathBuf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
-use crate::error::{BitchXError, Result};
+use crate::error::{BitchYError, Result};
+
+const DCC_ACK_BYTES: usize = std::mem::size_of::<u32>();
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DccType {
@@ -111,11 +113,11 @@ pub async fn receive_file(
     let addr = SocketAddr::new(offer.address, offer.port);
     let mut stream = TcpStream::connect(addr)
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Failed to connect: {e}")))?;
+        .map_err(|e| BitchYError::Dcc(format!("Failed to connect: {e}")))?;
 
     let mut file = tokio::fs::File::create(save_path)
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Failed to create file: {e}")))?;
+        .map_err(|e| BitchYError::Dcc(format!("Failed to create file: {e}")))?;
 
     let mut total: u64 = 0;
     let mut buf = vec![0u8; 8192];
@@ -124,13 +126,13 @@ pub async fn receive_file(
         let n = stream
             .read(&mut buf)
             .await
-            .map_err(|e| BitchXError::Dcc(format!("Read error: {e}")))?;
+            .map_err(|e| BitchYError::Dcc(format!("Read error: {e}")))?;
         if n == 0 {
             break;
         }
         file.write_all(&buf[..n])
             .await
-            .map_err(|e| BitchXError::Dcc(format!("Write error: {e}")))?;
+            .map_err(|e| BitchYError::Dcc(format!("Write error: {e}")))?;
         total += n as u64;
 
         // Send DCC acknowledgement (4-byte big-endian total bytes)
@@ -151,34 +153,43 @@ pub async fn send_file(
 ) -> Result<u64> {
     let metadata = tokio::fs::metadata(path)
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Failed to stat file: {e}")))?;
+        .map_err(|e| BitchYError::Dcc(format!("Failed to stat file: {e}")))?;
     let file_size = metadata.len();
 
     let (mut stream, _) = listener
         .accept()
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Accept error: {e}")))?;
+        .map_err(|e| BitchYError::Dcc(format!("Accept error: {e}")))?;
 
     let mut file = tokio::fs::File::open(path)
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Failed to open file: {e}")))?;
+        .map_err(|e| BitchYError::Dcc(format!("Failed to open file: {e}")))?;
 
     let mut total: u64 = 0;
     let mut buf = vec![0u8; block_size];
+    let mut ack = [0u8; DCC_ACK_BYTES];
 
     loop {
         let n = file
             .read(&mut buf)
             .await
-            .map_err(|e| BitchXError::Dcc(format!("Read error: {e}")))?;
+            .map_err(|e| BitchYError::Dcc(format!("Read error: {e}")))?;
         if n == 0 {
             break;
         }
         stream
             .write_all(&buf[..n])
             .await
-            .map_err(|e| BitchXError::Dcc(format!("Write error: {e}")))?;
+            .map_err(|e| BitchYError::Dcc(format!("Write error: {e}")))?;
         total += n as u64;
+
+        // DCC SEND receivers acknowledge each block with a 4-byte total count.
+        // Reading the ACK keeps the transfer protocol-correct and avoids socket
+        // resets on platforms that surface unread peer writes during shutdown.
+        stream
+            .read_exact(&mut ack)
+            .await
+            .map_err(|e| BitchYError::Dcc(format!("Ack read error: {e}")))?;
 
         let _ = progress_tx.send((total, Some(file_size)));
     }
@@ -186,7 +197,7 @@ pub async fn send_file(
     stream
         .shutdown()
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Shutdown error: {e}")))?;
+        .map_err(|e| BitchYError::Dcc(format!("Shutdown error: {e}")))?;
 
     Ok(total)
 }
@@ -195,7 +206,7 @@ pub async fn accept_chat(offer: &DccOffer) -> Result<TcpStream> {
     let addr = SocketAddr::new(offer.address, offer.port);
     TcpStream::connect(addr)
         .await
-        .map_err(|e| BitchXError::Dcc(format!("Failed to connect for DCC chat: {e}")))
+        .map_err(|e| BitchYError::Dcc(format!("Failed to connect for DCC chat: {e}")))
 }
 
 #[cfg(test)]
