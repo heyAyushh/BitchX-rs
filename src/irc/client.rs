@@ -184,7 +184,7 @@ impl IrcClient {
                                     }
 
                                     if !auto_joined
-                                        && matches!(msg.command.as_str(), "001" | "376" | "422")
+                                        && matches!(msg.command.as_str(), "376" | "422")
                                     {
                                         for channel in &config.auto_join {
                                             let _ = writer.send(&IrcCommand::join(channel)).await;
@@ -983,7 +983,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn client_auto_joins_configured_channels_after_welcome() {
+    async fn client_auto_joins_configured_channels_after_end_of_motd() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
 
@@ -991,7 +991,8 @@ mod tests {
             let (mut sock, _) = listener.accept().await.unwrap();
             let mut buf = vec![0u8; 4096];
             let mut all_data = String::new();
-            let mut sent_welcome = false;
+            let mut sent_end_of_motd = false;
+            let mut joined_before_end_of_motd = false;
 
             for _ in 0..12 {
                 match tokio::time::timeout(
@@ -1004,11 +1005,108 @@ mod tests {
                     Ok(Ok(n)) => {
                         all_data.push_str(&String::from_utf8_lossy(&buf[..n]));
 
-                        if !sent_welcome && all_data.contains("USER") {
+                        if !sent_end_of_motd && all_data.contains("USER") {
                             sock.write_all(b":server 001 testbot :Welcome\r\n")
                                 .await
                                 .unwrap();
-                            sent_welcome = true;
+                            match tokio::time::timeout(
+                                tokio::time::Duration::from_millis(100),
+                                sock.read(&mut buf),
+                            )
+                            .await
+                            {
+                                Ok(Ok(join_bytes)) if join_bytes > 0 => {
+                                    let join_data = String::from_utf8_lossy(&buf[..join_bytes]);
+                                    joined_before_end_of_motd = join_data.contains("JOIN :#rust")
+                                        || join_data.contains("JOIN :#bitchx");
+                                    all_data.push_str(&join_data);
+                                }
+                                _ => {}
+                            }
+                            sock.write_all(b":server 376 testbot :End of /MOTD command.\r\n")
+                                .await
+                                .unwrap();
+                            sent_end_of_motd = true;
+                        }
+
+                        if all_data.contains("JOIN :#rust") && all_data.contains("JOIN :#bitchx") {
+                            break;
+                        }
+                    }
+                    _ => break,
+                }
+            }
+            sock.shutdown().await.ok();
+            (all_data, joined_before_end_of_motd)
+        });
+
+        let (client, cmd_tx, _event_rx) = IrcClient::new();
+        let mut config = test_config();
+        config.auto_join = vec!["#rust".into(), "#bitchx".into()];
+
+        let server_config = ServerConfig {
+            host: addr.ip().to_string(),
+            port: addr.port(),
+            tls: false,
+            password: None,
+            sasl_user: None,
+            sasl_pass: None,
+        };
+
+        cmd_tx.send(ClientCommand::Connect(server_config)).unwrap();
+
+        let client_handle = tokio::spawn(async move { client.run(&config).await });
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+        drop(cmd_tx);
+        let _ = client_handle.await;
+
+        let (data, joined_before_end_of_motd) = server_handle.await.unwrap();
+        assert!(
+            !joined_before_end_of_motd,
+            "Should wait until end of MOTD before auto-join, got: {data}"
+        );
+        assert!(
+            data.contains("JOIN :#rust"),
+            "Should auto-join #rust after end of MOTD, got: {data}"
+        );
+        assert!(
+            data.contains("JOIN :#bitchx"),
+            "Should auto-join #bitchx after end of MOTD, got: {data}"
+        );
+    }
+
+    #[tokio::test]
+    async fn client_auto_joins_configured_channels_when_motd_is_missing() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let server_handle = tokio::spawn(async move {
+            let (mut sock, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 4096];
+            let mut all_data = String::new();
+            let mut sent_no_motd = false;
+
+            for _ in 0..12 {
+                match tokio::time::timeout(
+                    tokio::time::Duration::from_millis(200),
+                    sock.read(&mut buf),
+                )
+                .await
+                {
+                    Ok(Ok(0)) => break,
+                    Ok(Ok(n)) => {
+                        all_data.push_str(&String::from_utf8_lossy(&buf[..n]));
+
+                        if !sent_no_motd && all_data.contains("USER") {
+                            sock.write_all(b":server 001 testbot :Welcome\r\n")
+                                .await
+                                .unwrap();
+                            sock.write_all(b":server 422 testbot :MOTD File is missing\r\n")
+                                .await
+                                .unwrap();
+                            sent_no_motd = true;
                         }
 
                         if all_data.contains("JOIN :#rust") && all_data.contains("JOIN :#bitchx") {
@@ -1047,11 +1145,11 @@ mod tests {
         let data = server_handle.await.unwrap();
         assert!(
             data.contains("JOIN :#rust"),
-            "Should auto-join #rust after welcome, got: {data}"
+            "Should auto-join #rust when MOTD is missing, got: {data}"
         );
         assert!(
             data.contains("JOIN :#bitchx"),
-            "Should auto-join #bitchx after welcome, got: {data}"
+            "Should auto-join #bitchx when MOTD is missing, got: {data}"
         );
     }
 }
