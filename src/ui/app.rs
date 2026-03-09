@@ -7,9 +7,12 @@ use ratatui::prelude::*;
 use tokio::sync::mpsc;
 
 use crate::config::Config;
-use crate::irc::channel::{Channel, ChannelUser, ChatMessage, MessageKind};
+use crate::irc::channel::{
+    merge_prefix, prefix_from_user_mode, Channel, ChannelUser, ChatMessage, MessageKind,
+};
 use crate::irc::client::{ClientCommand, IrcEvent};
 use crate::irc::message::IrcMessage;
+use crate::irc::mode::{parse_mode_changes, ModeChange};
 use crate::plugin::loader::PluginManager;
 
 use super::input::{InputAction, InputState};
@@ -134,16 +137,7 @@ impl App {
                         );
                     }
 
-                    let plugin_responses = self.plugin_manager.dispatch_message(
-                        &msg_sender,
-                        &channel_name,
-                        &msg_content,
-                    );
-                    for (_plugin_name, response) in plugin_responses {
-                        let _ = self
-                            .cmd_tx
-                            .send(ClientCommand::Privmsg(channel_name.clone(), response));
-                    }
+                    self.dispatch_plugin_responses(&msg_sender, &channel_name, &msg_content);
                 }
             }
             "JOIN" => {
@@ -168,10 +162,14 @@ impl App {
                         );
                         ch.add_message(ChatMessage {
                             timestamp: Utc::now(),
-                            sender: nick,
-                            content: channel_name,
+                            sender: nick.clone(),
+                            content: channel_name.clone(),
                             kind: MessageKind::Join,
                         });
+                    }
+                    if nick != self.nick {
+                        let join_message = format!("{nick} has joined {channel_name}");
+                        self.dispatch_plugin_responses(&nick, &channel_name, &join_message);
                     }
                 }
             }
@@ -258,6 +256,12 @@ impl App {
                     let mode_str = msg.params[1..].join(" ");
                     if target.starts_with('#') || target.starts_with('&') {
                         if let Some(ch) = self.channels.get_mut(target) {
+                            if let Some(mode_flags) = msg.params.get(1) {
+                                let changes = parse_mode_changes(mode_flags, &msg.params[2..]);
+                                for change in &changes {
+                                    apply_channel_mode_change(ch, change);
+                                }
+                            }
                             ch.add_message(ChatMessage {
                                 timestamp: Utc::now(),
                                 sender: nick,
@@ -295,12 +299,7 @@ impl App {
                     self.ensure_channel(channel_name);
                     if let Some(ch) = self.channels.get_mut(channel_name) {
                         for name in names.split_whitespace() {
-                            let (prefix, nick_str) =
-                                if name.starts_with('@') || name.starts_with('+') {
-                                    (Some(name.as_bytes()[0] as char), &name[1..])
-                                } else {
-                                    (None, name)
-                                };
+                            let (prefix, nick_str) = split_user_prefix(name);
                             ch.users.insert(
                                 nick_str.to_string(),
                                 ChannelUser {
@@ -705,8 +704,9 @@ impl App {
 
     fn ensure_channel(&mut self, name: &str) {
         if !self.channels.contains_key(name) {
-            self.channels
-                .insert(name.to_string(), Channel::new(name.to_string()));
+            let mut ch = Channel::new(name.to_string());
+            ch.max_messages = self.config.ui.scrollback_lines;
+            self.channels.insert(name.to_string(), ch);
         }
     }
 
@@ -717,6 +717,11 @@ impl App {
             content: content.to_string(),
             kind,
         });
+        let max = self.config.ui.scrollback_lines;
+        if max > 0 && self.server_messages.len() > max {
+            self.server_messages
+                .drain(..self.server_messages.len() - max);
+        }
     }
 
     fn switch_channel(&mut self, direction: i32) {
@@ -753,5 +758,153 @@ impl App {
             .map(|(_, w)| w)
             .unwrap_or(before)
             .to_string()
+    }
+
+    fn dispatch_plugin_responses(&mut self, sender: &str, target: &str, message: &str) {
+        let plugin_responses = self
+            .plugin_manager
+            .dispatch_message(sender, target, message);
+        for (_plugin_name, response) in plugin_responses {
+            let _ = self
+                .cmd_tx
+                .send(ClientCommand::Privmsg(target.to_string(), response));
+        }
+    }
+}
+
+fn split_user_prefix(name: &str) -> (Option<char>, &str) {
+    match name.chars().next() {
+        Some(prefix @ ('~' | '&' | '@' | '%' | '+')) => (Some(prefix), &name[1..]),
+        _ => (None, name),
+    }
+}
+
+fn apply_channel_mode_change(channel: &mut Channel, change: &ModeChange) {
+    match change {
+        ModeChange::Add(mode, Some(nick)) => {
+            if let Some(prefix) = prefix_from_user_mode(*mode) {
+                let user = channel
+                    .users
+                    .entry(nick.clone())
+                    .or_insert_with(|| ChannelUser {
+                        nick: nick.clone(),
+                        prefix: None,
+                    });
+                user.prefix = merge_prefix(user.prefix, prefix);
+            } else {
+                channel.modes.insert(*mode);
+            }
+        }
+        ModeChange::Remove(mode, Some(nick)) => {
+            if let Some(prefix) = prefix_from_user_mode(*mode) {
+                if let Some(user) = channel.users.get_mut(nick) {
+                    if user.prefix == Some(prefix) {
+                        user.prefix = None;
+                    }
+                }
+            } else {
+                channel.modes.remove(mode);
+            }
+        }
+        ModeChange::Add(mode, None) => {
+            channel.modes.insert(*mode);
+        }
+        ModeChange::Remove(mode, None) => {
+            channel.modes.remove(mode);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_app() -> App {
+        let (_event_tx, event_rx) = mpsc::unbounded_channel();
+        let (cmd_tx, _cmd_rx) = mpsc::unbounded_channel();
+
+        App::new(
+            Config {
+                nick: "testbot".into(),
+                ..Config::default()
+            },
+            event_rx,
+            cmd_tx,
+        )
+    }
+
+    #[test]
+    fn names_reply_tracks_extended_user_prefixes() {
+        let mut app = test_app();
+        app.active_channel = Some("#rust".into());
+
+        app.handle_irc_message(
+            IrcMessage::parse(":server 353 testbot = #rust :~owner %halfop @op +voice plain")
+                .unwrap(),
+        );
+
+        let channel = app.channels.get("#rust").unwrap();
+        assert_eq!(channel.users.get("owner").unwrap().prefix, Some('~'));
+        assert_eq!(channel.users.get("halfop").unwrap().prefix, Some('%'));
+        assert_eq!(channel.users.get("op").unwrap().prefix, Some('@'));
+        assert_eq!(channel.users.get("voice").unwrap().prefix, Some('+'));
+        assert_eq!(channel.users.get("plain").unwrap().prefix, None);
+
+        let ordered_nicks: Vec<&str> = channel
+            .sorted_users()
+            .into_iter()
+            .map(|user| user.nick.as_str())
+            .collect();
+        assert_eq!(
+            ordered_nicks,
+            vec!["owner", "op", "halfop", "voice", "plain"]
+        );
+    }
+
+    #[test]
+    fn channel_mode_messages_update_channel_flags_and_user_prefixes() {
+        let mut app = test_app();
+        app.handle_irc_message(IrcMessage::parse(":server 353 testbot = #rust :alice").unwrap());
+
+        app.handle_irc_message(IrcMessage::parse(":chanop!user@host MODE #rust +nt").unwrap());
+        let channel = app.channels.get("#rust").unwrap();
+        assert!(channel.modes.contains(&'n'));
+        assert!(channel.modes.contains(&'t'));
+
+        app.handle_irc_message(IrcMessage::parse(":chanop!user@host MODE #rust +o alice").unwrap());
+        assert_eq!(
+            app.channels
+                .get("#rust")
+                .unwrap()
+                .users
+                .get("alice")
+                .unwrap()
+                .prefix,
+            Some('@')
+        );
+
+        app.handle_irc_message(IrcMessage::parse(":chanop!user@host MODE #rust -o alice").unwrap());
+        assert_eq!(
+            app.channels
+                .get("#rust")
+                .unwrap()
+                .users
+                .get("alice")
+                .unwrap()
+                .prefix,
+            None
+        );
+
+        app.handle_irc_message(IrcMessage::parse(":chanop!user@host MODE #rust +v alice").unwrap());
+        assert_eq!(
+            app.channels
+                .get("#rust")
+                .unwrap()
+                .users
+                .get("alice")
+                .unwrap()
+                .prefix,
+            Some('+')
+        );
     }
 }

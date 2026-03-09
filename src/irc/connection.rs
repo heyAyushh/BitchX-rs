@@ -4,6 +4,7 @@ use tokio::net::TcpStream;
 use tokio_rustls::client::TlsStream;
 use tokio_rustls::TlsConnector;
 
+use crate::config::TlsConfig;
 use crate::error::{BitchYError, Result};
 
 pub enum IrcStream {
@@ -27,16 +28,40 @@ enum IrcWriter {
 }
 
 impl IrcConnection {
-    pub async fn connect(host: &str, port: u16, use_tls: bool, verify_certs: bool) -> Result<Self> {
+    pub async fn connect(
+        host: &str,
+        port: u16,
+        use_tls: bool,
+        tls_config: &TlsConfig,
+    ) -> Result<Self> {
         let tcp = TcpStream::connect((host, port)).await?;
 
         if use_tls {
             let _ = rustls::crypto::ring::default_provider().install_default();
 
-            let config = if verify_certs {
-                rustls::ClientConfig::builder()
-                    .with_root_certificates(root_store())
-                    .with_no_client_auth()
+            let config = if tls_config.verify_certs {
+                let mut root_store = root_store();
+                if let Some(ref ca_path) = tls_config.ca_file {
+                    let data = std::fs::read(ca_path)
+                        .map_err(|e| BitchYError::Tls(format!("Failed to read ca_file: {e}")))?;
+                    let mut cursor = std::io::Cursor::new(data);
+                    for cert in rustls_pemfile::certs(&mut cursor) {
+                        root_store
+                            .add(
+                                cert.map_err(|e| {
+                                    BitchYError::Tls(format!("Invalid CA cert: {e}"))
+                                })?,
+                            )
+                            .map_err(|e| BitchYError::Tls(format!("Failed to add CA cert: {e}")))?;
+                    }
+                }
+                let builder = rustls::ClientConfig::builder().with_root_certificates(root_store);
+                match (&tls_config.client_cert, &tls_config.client_key) {
+                    (Some(cert_path), Some(key_path)) => builder
+                        .with_client_auth_cert(load_certs(cert_path)?, load_key(key_path)?)
+                        .map_err(|e| BitchYError::Tls(format!("Client cert error: {e}")))?,
+                    _ => builder.with_no_client_auth(),
+                }
             } else {
                 rustls::ClientConfig::builder()
                     .dangerous()
@@ -143,6 +168,24 @@ impl ConnectionWriter {
     }
 }
 
+fn load_certs(path: &std::path::Path) -> Result<Vec<rustls::pki_types::CertificateDer<'static>>> {
+    let data = std::fs::read(path)
+        .map_err(|e| BitchYError::Tls(format!("Failed to read cert file: {e}")))?;
+    let mut cursor = std::io::Cursor::new(data);
+    rustls_pemfile::certs(&mut cursor)
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|e| BitchYError::Tls(format!("Invalid cert: {e}")))
+}
+
+fn load_key(path: &std::path::Path) -> Result<rustls::pki_types::PrivateKeyDer<'static>> {
+    let data = std::fs::read(path)
+        .map_err(|e| BitchYError::Tls(format!("Failed to read key file: {e}")))?;
+    let mut cursor = std::io::Cursor::new(data);
+    rustls_pemfile::private_key(&mut cursor)
+        .map_err(|e| BitchYError::Tls(format!("Invalid key: {e}")))?
+        .ok_or_else(|| BitchYError::Tls("No private key found in key file".into()))
+}
+
 fn root_store() -> rustls::RootCertStore {
     let mut store = rustls::RootCertStore::empty();
     store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
@@ -201,6 +244,7 @@ impl rustls::client::danger::ServerCertVerifier for NoVerifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::TlsConfig;
     use tokio::io::AsyncReadExt;
     use tokio::net::TcpListener;
 
@@ -218,9 +262,14 @@ mod tests {
             received
         });
 
-        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-            .await
-            .unwrap();
+        let mut conn = IrcConnection::connect(
+            &addr.ip().to_string(),
+            addr.port(),
+            false,
+            &TlsConfig::default(),
+        )
+        .await
+        .unwrap();
 
         conn.send("PING :token").await.unwrap();
         let response = conn.recv().await.unwrap();
@@ -240,9 +289,14 @@ mod tests {
             drop(sock);
         });
 
-        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-            .await
-            .unwrap();
+        let mut conn = IrcConnection::connect(
+            &addr.ip().to_string(),
+            addr.port(),
+            false,
+            &TlsConfig::default(),
+        )
+        .await
+        .unwrap();
 
         server.await.unwrap();
         let result = conn.recv().await.unwrap();
@@ -265,9 +319,14 @@ mod tests {
             received
         });
 
-        let conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-            .await
-            .unwrap();
+        let conn = IrcConnection::connect(
+            &addr.ip().to_string(),
+            addr.port(),
+            false,
+            &TlsConfig::default(),
+        )
+        .await
+        .unwrap();
 
         let (mut reader, mut writer) = conn.split();
 
@@ -291,9 +350,14 @@ mod tests {
             String::from_utf8_lossy(&buf[..n]).to_string()
         });
 
-        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-            .await
-            .unwrap();
+        let mut conn = IrcConnection::connect(
+            &addr.ip().to_string(),
+            addr.port(),
+            false,
+            &TlsConfig::default(),
+        )
+        .await
+        .unwrap();
 
         conn.send("QUIT :bye\r\n").await.unwrap();
         drop(conn);
@@ -315,9 +379,14 @@ mod tests {
             drop(sock);
         });
 
-        let mut conn = IrcConnection::connect(&addr.ip().to_string(), addr.port(), false, false)
-            .await
-            .unwrap();
+        let mut conn = IrcConnection::connect(
+            &addr.ip().to_string(),
+            addr.port(),
+            false,
+            &TlsConfig::default(),
+        )
+        .await
+        .unwrap();
 
         server.await.unwrap();
 
@@ -334,7 +403,7 @@ mod tests {
 
     #[tokio::test]
     async fn connect_to_invalid_address_fails() {
-        let result = IrcConnection::connect("127.0.0.1", 1, false, false).await;
+        let result = IrcConnection::connect("127.0.0.1", 1, false, &TlsConfig::default()).await;
         assert!(result.is_err());
     }
 
