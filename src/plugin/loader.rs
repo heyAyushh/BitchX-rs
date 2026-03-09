@@ -84,7 +84,10 @@ impl PluginManager {
             unsafe { CStr::from_ptr(ptr) }
                 .to_str()
                 .map_err(|e| {
-                    BitchXError::Plugin(format!("Plugin {} name is not valid UTF-8: {e}", path.display()))
+                    BitchXError::Plugin(format!(
+                        "Plugin {} name is not valid UTF-8: {e}",
+                        path.display()
+                    ))
                 })?
                 .to_string()
         };
@@ -192,9 +195,10 @@ impl PluginManager {
     ///
     /// Calls `bitchx_plugin_cleanup()` before dropping the library handle.
     pub fn unload(&mut self, name: &str) -> Result<()> {
-        let plugin = self.plugins.remove(name).ok_or_else(|| {
-            BitchXError::Plugin(format!("Plugin '{}' is not loaded", name))
-        })?;
+        let plugin = self
+            .plugins
+            .remove(name)
+            .ok_or_else(|| BitchXError::Plugin(format!("Plugin '{}' is not loaded", name)))?;
 
         // SAFETY: bitchx_plugin_cleanup is required to be safe to call once
         // during plugin unload. We call it before dropping the library.
@@ -218,7 +222,12 @@ impl PluginManager {
     ///
     /// Returns a vec of `(plugin_name, response)` for any plugin that returns
     /// a non-null response string.
-    pub fn dispatch_message(&self, sender: &str, target: &str, message: &str) -> Vec<(String, String)> {
+    pub fn dispatch_message(
+        &self,
+        sender: &str,
+        target: &str,
+        message: &str,
+    ) -> Vec<(String, String)> {
         let mut responses = Vec::new();
 
         let c_sender = match CString::new(sender) {
@@ -242,9 +251,7 @@ impl PluginManager {
                 unsafe { plugin.library.get(b"bitchx_plugin_on_message") };
 
             if let Ok(func) = on_msg {
-                let ptr = unsafe {
-                    func(c_sender.as_ptr(), c_target.as_ptr(), c_message.as_ptr())
-                };
+                let ptr = unsafe { func(c_sender.as_ptr(), c_target.as_ptr(), c_message.as_ptr()) };
 
                 if !ptr.is_null() {
                     // SAFETY: The plugin contract says non-null returns are

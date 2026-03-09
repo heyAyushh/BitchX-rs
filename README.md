@@ -121,8 +121,8 @@ shared libraries (.so files) loaded at runtime with /loaddll, unloaded with
 /unloaddll, and listed with /listdll. Two example plugins, hello and greet,
 are included in the plugins/ directory and built as part of the workspace.
 
-To write a plugin, implement the bitchx_plugin_init, bitchx_plugin_on_command,
-and bitchx_plugin_destroy symbols as a cdylib crate. See plugins/hello/ for a
+To write a plugin, implement the bitchx_plugin_init, bitchx_plugin_on_message,
+and bitchx_plugin_cleanup symbols as a cdylib crate. See plugins/hello/ for a
 minimal example.
 
 
