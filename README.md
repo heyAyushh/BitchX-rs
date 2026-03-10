@@ -139,9 +139,7 @@ the Rust rewrite attribution used by this repository.
 Links
 =====
 
-    https://github.com/heyAyushh/BitchY          Current repository location
-    https://www.bitchx.org/                      Original BitchX website
-    https://faq.bitchx.org/                      Original FAQ
+    https://github.com/heyAyushh/BitchY
 
 
 Contacts
